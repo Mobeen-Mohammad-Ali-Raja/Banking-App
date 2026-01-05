@@ -6,8 +6,7 @@ This is a Java-based command-line interface (CLI) banking system developed for A
 ## Project Contributors
 **Group Members:**
 
-| Name |
-| :--- | 
+
 | **Daniel** | 
 | **Mobeen** | 
 | **Praveenan** | 

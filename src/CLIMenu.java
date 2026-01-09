@@ -104,6 +104,101 @@ public class CLIMenu {
     // Using context for different cases of help to be shown
     private static void help(String context) {
         // TODO: Add the text for each help option
+        IO.println("\n=== Help ===");
+
+        switch (context) {
+            case "main menu":
+                IO.println("""
+                        --- Main Menu Help ---
+                        1. Find Customer - Search for an existing customer by Customer ID
+                        2. Sign Up Customer - Register a new customer in the system
+                        3. Switch Customer - Change to another customer's session
+                        4. Help - Display this help information
+                        0. Exit - Close the Acme Teller System
+                        """);
+                break;
+            case "customer portal":
+                IO.println("""
+                        --- Customer Portal Help ---
+                        1. View Accounts - See all accounts associated with this customer
+                        2. Open Account - Create a new account for this customer
+                        3. Switch Customer - Change to another customer's session
+                        4. Help - Display this help information
+                        0. Back to Main Menu - Return to the main menu
+                        """);
+                break;
+            case "list customer accounts":
+                IO.println("""
+                        --- Account List Help ---
+                        This screen displays all accounts for the current customer.
+                        Each account shows: Account Number, Type, Sort Code, and Balance.
+                        
+                        Options: 
+                        1. Select Account - Choose an account to perform operations on
+                        2. Help - Display this help information
+                        0. Back - Return to Customer Portal 
+                        """);
+                break;
+            case "select accounts":
+                IO.println("""
+                        --- Account Operations Help ---
+                        1. Deposit - Add money to the selected account
+                        2. Withdraw - Remove money from the selected account
+                        3. View Transactions - See transaction history for this account
+                        4. Help - Display this help information
+                        0. Back to Accounts List - Return to account selection
+                        """);
+                break;
+            case "open account":
+                IO.println("""
+                        --- Open Account Help ---
+                        This process guides you through creating a new account.
+                        
+                        Account Types:
+                        1. Personal - Standard personal banking account
+                        2. ISA - Tax-free Individual Savings Account
+                        3. Business - Account for business transactions
+                        4. Help - Display this help information
+                        0. Back - Return to Customer Portal
+                        """);
+                break;
+            case "create account":
+                IO.println("""
+                        --- Create Account Help ---
+                        1. Set Initial Balance - Specify starting balance for the new account
+                        2. Enable Overdraft - Allow account to go below zero (subject to approval)
+                        3. Complete Account Creation - Finish setup and create the account
+                        4. Help - Display this help information
+                        0. Cancel - Abort account creation
+                        """);
+                break;
+            case "sign up": // To be properly implemented
+                IO.println("""
+                        --- Sign Up Customer Help ---
+                        This process registers a new customer in the system.
+                        You will need to provide personal information and identification.
+                        After registration, you can immediately open accounts for the customer.
+                        """);
+                break;
+            case "switch customer": // To be properly implemented
+                IO.println("""
+                        --- Switch Customer Help ---
+                        This allows you to switch between different customer sessions.
+                        You need to find an existing customer first before switching to their session.
+                        Useful for serving multiple customers in sequence.
+                        """);
+                break;
+            default:
+                IO.println("""
+                        --- General Help ---
+                        Welcome to Acme Teller System!
+                        Use the number keys to navigate through menus.
+                        Press 0 or Back options to return to previous menus.
+                        Press Help in any menu for context-specific help
+                        """);
+        }
+        IO.print("\nPress Enter to continue...");
+        reader.nextLine();
     }
 
     private static void customerPortal() {
@@ -257,7 +352,7 @@ public class CLIMenu {
                 2. ISA
                 3. Business
                 4. Help
-                5. Back to Customer Portal
+                0. Back to Customer Portal
                 """);
         IO.print("Select an option: ");
         
@@ -265,6 +360,7 @@ public class CLIMenu {
         reader.nextLine();
         
         String accountType = "";
+        boolean validChoice = true;
         
         switch (choice) {
             case 1:
@@ -278,46 +374,67 @@ public class CLIMenu {
                 break;
             case 4: 
                 help("open account");
+                openAccount();
                 break;
-            case 5:
+            case 0:
                 customerPortal();
                 break;
             default: 
                 IO.println("Invalid option, Try again!\n");
+                openAccount();
+                return;
         }
-        
+
+        if (!accountType.isEmpty()) {
+            createAccount(accountType);
+        }
+    }
+
+    private static void createAccount(String accountType) {
         IO.println("\n=== Create " + accountType.toUpperCase() + " Account ===");
         IO.println("""
                 1. Set Initial Balance
                 2. Enable Overdraft
                 3. Complete Account Creation
+                4. Help
                 0. Cancel Operation
                 """);
         IO.print("Select an option: ");
-        
+
         byte createChoice = reader.nextByte();
         reader.nextLine();
-        
-        if (createChoice == 0) {
-            IO.println("Account creation cancelled\n");
-            customerPortal();
+
+        switch (createChoice) {
+            case 1: // TODO: Implement try catch
+                IO.print("Enter initial balance: £");
+                double balance = reader.nextDouble();
+                reader.nextLine();
+                IO.println("Initial balance set to: £" + balance);
+                createAccount(accountType);
+                break;
+            case 2: // Overdraft will change depending on account
+                IO.println("Overdraft Enabled!");
+                createAccount(accountType);
+                break;
+            case 3:
+                // TODO: Creating account logic added
+                IO.println("Creating account...");
+                IO.println(accountType + " Account Created!\n");
+                IO.println("=== Back to Customer Portal ===");
+                customerPortal();
+                break;
+            case 4:
+                help("create account");
+                createAccount(accountType);
+                break;
+            case 0:
+                IO.println("Account creation cancelled\n");
+                openAccount();
+                break;
+            default:
+                IO.println("Invalid option, Try again!\n");
+                createAccount(accountType);
         }
-        
-        // TODO: Creating account logic added
-        IO.println("Creating account...");
-        
-        if (createChoice == 1) {
-            IO.print("Enter initial balance: £");
-            double balance = reader.nextDouble();
-            reader.nextLine();
-            IO.println("Initial balance set to: £" + balance);
-        }
-        // Overdraft will change depending on account
-        if (createChoice == 2) 
-            IO.println("Overdraft Enabled!");
-        
-        IO.println(accountType + " Account Created!\n");
-        IO.println("=== Back to Customer Portal ===");
-        customerPortal();
     }
+
 }

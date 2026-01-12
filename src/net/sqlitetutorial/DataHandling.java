@@ -70,7 +70,7 @@ public class DataHandling {
         }
     }
 
-    public static void main(String[] args) {
+    public static void main() {
 
 
         String randomNumber = AccountNumberGenerator.generateAccountNumber();

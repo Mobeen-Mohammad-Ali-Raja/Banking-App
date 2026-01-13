@@ -84,17 +84,68 @@ public class CLIMenu {
 
     private static void signUpCustomer() {
         IO.println("\n=== Sign Up Customer ===");
-        IO.print("Creating new customer...");
-        // TODO: Add prompts for customer details
-        // TODO: Logic for creating customer
-        IO.println("Customer created\n");
+        IO.println("To create a new customer account, please provide the following information.");
+        IO.println("""
+                1. Continue with Sign Up
+                2. Help
+                0. Back to Main Menu
+                """);
+        IO.print("Select an option: ");
 
-        customerPortal();
+        byte option = reader.nextByte();
+        reader.nextLine();
+
+        switch (option) {
+            case 1:
+                // TODO: Logic for creating customer
+                IO.print("Creating new customer...");
+                IO.println("Customer created successfully!\n");
+                customerPortal();
+                break;
+            case 2:
+                help("sign up");
+                signUpCustomer();
+                break;
+            case 0:
+                showMainMenu();
+                break;
+            default:
+                IO.println("Invalid option, Try again\n");
+                signUpCustomer();
+        }
     }
 
     private static void switchCustomer() {
         IO.println("\n=== Switch Customer ===");
-        IO.println("Switching to another customer session...");
+        IO.println("This option allows you to switch to another customer session.");
+        IO.println("You will need to find an existing customer to switch their session");
+        IO.println("""
+                1. Find Customer to Switch To
+                2. Help
+                0. Back to Main Menu
+                """);
+        IO.print("Select an option: ");
+
+        byte option = reader.nextByte();
+        reader.nextLine();
+
+        switch (option) {
+            case 1:
+                IO.println("Switching to another customer session...");
+                findCustomer();
+                break;
+            case 2:
+                help("switch customer");
+                switchCustomer();
+                break;
+            case 0:
+                showMainMenu();
+                break;
+            default:
+                IO.println("Invalid option, Try again!\n");
+                switchCustomer();
+        }
+
         IO.println("Customer session started\n");
 
         // Go back to find customer

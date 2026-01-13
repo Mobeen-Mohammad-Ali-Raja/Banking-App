@@ -13,7 +13,7 @@ public class PersonalAccount extends Account {
     public PersonalAccount(String customerId, double openingBalance) {
         // Pass the specific sort code up to the parent Account constructor
         super(customerId, PERSONAL_SORT_CODE, openingBalance);
-        
+
         if (openingBalance < 1.00) {
             throw new IllegalArgumentException("Error: Personal Account requires minimum £1 opening balance.");
         }

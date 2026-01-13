@@ -362,20 +362,44 @@ public class CLIMenu {
 
     private static void deposit() {
         IO.println("\n=== Deposit ===");
+        IO.println("Enter the amount you wish to deposit into the account");
         IO.print("Enter deposit amount: £");
-        double amount = reader.nextDouble();
-        reader.nextLine();
-        IO.println("Depositing: £" + amount);
-        IO.println("Deposit completed!\n");
+
+        try {
+            double amount = reader.nextDouble();
+            reader.nextLine();
+
+            if (amount <= 0) {
+                IO.println("Deposit amount must be greater than zero!\n");
+                return;
+            }
+            IO.println("Depositing: £" + amount);
+            IO.println("Deposit completed successfully!\n");
+        } catch (Exception e) {
+            IO.println("Invalid amount entered. Please enter a numeric value.\n");
+            reader.nextLine();
+        }
     }
 
     private static void withdraw() {
         IO.println("\n=== Withdraw ===");
+        IO.println("Enter the amount you wish to withdraw from the account.");
         IO.print("Enter withdrawal amount: £");
-        double amount = reader.nextDouble();
-        reader.nextLine();
-        IO.println("Withdrawing: £" + amount);
-        IO.println("Withdrawal completed\n");
+
+        try {
+            double amount = reader.nextDouble();
+            reader.nextLine();
+
+            if (amount <= 0) {
+                IO.println("Withdrawal amount must be greater than zero!\n");
+                return;
+            }
+            IO.println("Withdrawing: £" + amount);
+            IO.println("Withdrawal completed\n");
+        } catch (Exception e) {
+            IO.println("Invalid amount entered. Please enter a numeric value.\n");
+            reader.nextLine();
+        }
     }
 
     private static void viewTransactions() {
@@ -458,9 +482,14 @@ public class CLIMenu {
         switch (createChoice) {
             case 1: // TODO: Implement try catch
                 IO.print("Enter initial balance: £");
-                double balance = reader.nextDouble();
-                reader.nextLine();
-                IO.println("Initial balance set to: £" + balance);
+                try {
+                    double balance = reader.nextDouble();
+                    reader.nextLine();
+                    IO.println("Initial balance set to: £" + balance);
+                } catch (Exception e) {
+                    IO.println("Invalid amount entered.\n");
+                    reader.nextLine();
+                }
                 createAccount(accountType);
                 break;
             case 2: // Overdraft will change depending on account

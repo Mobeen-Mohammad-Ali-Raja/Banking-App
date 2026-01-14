@@ -9,9 +9,10 @@ import java.sql.ResultSet;
 
 public class CustomerAuthentication {
 
-    // Validating customer existence, then creating a customer object
+    // Validating customer existence, then creating a customer object using based on customer ID
     public static Customer findCustomerById(int customerId){
 
+        // String that contains the query that will be executed
         String query = ("""
             SELECT customer_id, name, national_id, photo_id, address_id, created_at 
             FROM customers
@@ -42,8 +43,10 @@ public class CustomerAuthentication {
         return null;
     }
 
+    // Validating customer existence, then creating a customer object using based on national insurance number
     public static Customer findCustomerByNationalId(String national_id){
 
+        // String that contains the query that will be executed
         String query = (""" 
             SELECT customer_id, name, national_id, photo_id, address_id, created_at 
             FROM customers 
@@ -75,8 +78,11 @@ public class CustomerAuthentication {
         return null;
     }
 
+
+    // Boolean method to check if a customer exists using customer ID
     public static boolean customerExists(int customerId){
 
+        // String that contains the query that will be executed
         String query = """
         SELECT name 
         FROM customers 

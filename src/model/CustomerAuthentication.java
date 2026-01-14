@@ -34,6 +34,8 @@ public class CustomerAuthentication {
                         rs.getString("created_at")
                 );
 
+                // Customer customer = CustomerAuthentication.findCustomerById(customerId);
+
             }
         } catch (SQLException e) {
             System.out.println("Error: " + e.getMessage());
@@ -67,6 +69,8 @@ public class CustomerAuthentication {
                         rs.getString("address_id"),
                         rs.getString("created_at")
                 );
+
+                // Customer customer = CustomerAuthentication.findCustomerByNationalId(national_id);
 
             }
 

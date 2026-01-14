@@ -103,4 +103,28 @@ public class CustomerAuthentication {
         // returns false if rs.next() is unable to execute
         return false;
     }
+
+    public static boolean customerExists(String national_id){
+
+        // String that contains the query that will be executed
+        String query = """
+        SELECT name 
+        FROM customers 
+        WHERE customer_id  = 
+        '""" + national_id + "''";
+
+        try (Connection conn = Main.getConnection();
+             Statement stmt = conn.createStatement()) {
+            ResultSet rs = stmt.executeQuery(query);
+
+            // returns true if the resulting query has a result and false if it has none
+            return rs.next();
+
+        } catch (SQLException e) {
+            System.out.println("Error: " + e.getMessage());
+        }
+
+        // returns false if rs.next() is unable to execute
+        return false;
+    }
 }

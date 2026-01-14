@@ -4,53 +4,53 @@ public class Customer {
 
 
     // Private fields used to flesh out a customer's profile
-    private final int customerId;
-    private final String name;
-    private final String nationalInsuranceNumber;
-    private final String photoId;
-    private final String address;
-    private final String createdAt;
+    private final int CUSTOMER_ID;
+    private final String NAME;
+    private final String NATIONAL_INSURANCE_NUMBER;
+    private final String PHOTO_ID;
+    private final String ADDRESS;
+    private final String CREATED_AT;
 
 
 
     // Constructor
     public Customer(int customerId, String name, String nationalInsuranceNumber, String photoId, String address, String createdAt) {
-        this.customerId = customerId;
-        this.name = name;
-        this.nationalInsuranceNumber = nationalInsuranceNumber;
-        this.photoId = photoId;
-        this.address = address;
-        this.createdAt = createdAt;
+        this.CUSTOMER_ID = customerId;
+        this.NAME = name;
+        this.NATIONAL_INSURANCE_NUMBER = nationalInsuranceNumber;
+        this.PHOTO_ID = photoId;
+        this.ADDRESS = address;
+        this.CREATED_AT = createdAt;
 
     }
     // Getter for customer ID
     public int getCustomerId() {
-        return customerId;
+        return CUSTOMER_ID;
     }
 
     // Getter for name
     public String getName() {
-        return name;
+        return NAME;
     }
 
     // Getter for national insurance number
     public String getNationalInsuranceNumber() {
-        return nationalInsuranceNumber;
+        return NATIONAL_INSURANCE_NUMBER;
     }
 
     // Getter for photo ID
     public String photoId() {
-        return photoId;
+        return PHOTO_ID;
     }
 
     // Getter for address
     public String address() {
-        return address;
+        return ADDRESS;
     }
 
     // Getter for time created
     public String getCreatedAt(){
-        return createdAt;
+        return CREATED_AT;
     }
 
     // Getter for customer ID
@@ -71,7 +71,7 @@ public class Customer {
                 """;
 
         // Filling the body of the skeletonView String with a format function, then returning it as a string
-        return String.format(skeletonView, name, nationalInsuranceNumber, photoId, address, createdAt);
+        return String.format(skeletonView, NAME, NATIONAL_INSURANCE_NUMBER, PHOTO_ID, ADDRESS, CREATED_AT);
     }
 
 }

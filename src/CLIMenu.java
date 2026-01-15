@@ -1,3 +1,5 @@
+import model.Customer;
+import model.CustomerAuthentication;
 import net.sqlitetutorial.DataHandling;
 
 import java.util.Scanner;
@@ -5,6 +7,7 @@ import java.util.Scanner;
 public class CLIMenu {
     static Scanner reader = new Scanner(System.in);
     static boolean running = true;
+     static Customer currentCustomer;
 
     public static void main() {
         IO.println("== Acme Teller System ==");
@@ -57,10 +60,13 @@ public class CLIMenu {
         IO.print("Enter CustomerID: ");
 
         String customerId = reader.nextLine();
+        Customer customer = CustomerAuthentication.findCustomerById(customerId);
+        currentCustomer = customer;
 
         // TODO: Customer search logic
-        if (customerId.length() > 0) {
+        if (customer != null) {
             IO.println("Customer Found\n");
+
             customerPortal();
         } else {
             IO.println("Customer Not Found\n");
@@ -84,6 +90,7 @@ public class CLIMenu {
         }
     }
 
+    //    Allows users to create a new customer account
     private static void signUpCustomer() {
         IO.println("\n=== Sign Up Customer ===");
         IO.println("To create a new customer account, please provide the following information.");
@@ -168,7 +175,7 @@ public class CLIMenu {
                     IO.print("Select an option:\t");
                 } else if (photoIdType >= 1 && photoIdType <= 2) {
                     validPhotoIdType = true;
-                }  else {
+                } else {
                     IO.print("Please enter a number between 0 and 3: ");
                 }
             } catch (NumberFormatException e) {
@@ -195,7 +202,6 @@ public class CLIMenu {
             photoIdNumber = reader.nextLine();
         }
 
-        String photoId = photoIdTypeStr + ": " + photoIdNumber;
 
         // Request customer's address (utility bill, council tax letter)
         IO.println("\n--- Address Information ---");
@@ -262,21 +268,22 @@ public class CLIMenu {
         IO.println("\n--- " + addressDocumentTypeStr + " Details ---");
 
         IO.print(addressDocumentTypeStr + " Reference Number:\t");
-        String refNumber = reader.nextLine();
+        String addressId = reader.nextLine();
 
-        while (refNumber.trim().isEmpty()) {
+        while (addressId.trim().isEmpty()) {
             IO.println(addressDocumentTypeStr + " reference number cannot be empty.");
             IO.print(addressDocumentTypeStr + " Reference Number:\t");
-            refNumber = reader.nextLine();
+            addressId = reader.nextLine();
         }
 
         // Confirm full details for sign up
         IO.println("\n=== Confirm Customer Details ===");
         IO.println("Name: " + name);
         IO.println("National ID: " + nationalID);
-        IO.println("Photo ID: " + photoId);
-        IO.println("Address: " + addressDocumentTypeStr);
-        IO.println("Address Reference Number: " + refNumber);
+        IO.println("Photo ID Type: " + photoIdTypeStr);
+        IO.println("Photo ID: " + photoIdNumber);
+        IO.println("Address Document Type: " + addressDocumentTypeStr);
+        IO.println("Address Reference Number: " + addressId);
         IO.println("\n1. Confirm and Create Customer");
         IO.println("2. Edit Details");
         IO.println("3. Help");
@@ -306,9 +313,9 @@ public class CLIMenu {
                     IO.println("\n=== Confirm Customer Details ===");
                     IO.println("Name: " + name);
                     IO.println("National ID: " + nationalID);
-                    IO.println("Photo ID: " + photoId);
+                    IO.println("Photo ID: " + photoIdNumber);
                     IO.println("Address: " + addressDocumentTypeStr);
-                    IO.println("Address Reference Number: " + refNumber);
+                    IO.println("Address Reference Number: " + addressId);
                     IO.println("\n1. Confirm and Create Customer");
                     IO.println("2. Edit Details");
                     IO.println("3. Help");
@@ -328,10 +335,13 @@ public class CLIMenu {
         switch (confirmOption) {
             case 1: // Confirm and insert customer into database
                 try {
-                    DataHandling.insertCustomer(name, nationalID, photoId, refNumber);
+
+                    DataHandling.insertCustomer(name, nationalID, photoIdNumber, addressId);
+//                    Customer customer = CustomerAuthentication.findCustomerByNationalId(nationalID);
 
                     IO.println("\nCustomer created successfully!");
                     IO.println("Customer details have been saved to the database.\n");
+
 
                     // Open an account immediately or customer portal
                     IO.println("Would you like to open an account for this customer?");
@@ -584,12 +594,14 @@ public class CLIMenu {
     private static void customerPortal() {
         boolean inPortal = true;
         // Printf to include the customer name variable
-        IO.println("=== John Smith | CUST001 ===");
+//        IO.println("=== John Smith | CUST001 ===");
+        IO.println(currentCustomer.formattedView());
         IO.println("1. View Accounts");
         IO.println("2. Open Account");
         IO.println("3. Switch Customer");
         IO.println("4. Help");
         IO.println("0. Back to Main Menu");
+
 
         byte choice = reader.nextByte();
         reader.nextLine();
@@ -628,10 +640,10 @@ public class CLIMenu {
         IO.println("1. Select Account");
         IO.println("2. Help");
         IO.println("0. Back");
-        
+
         byte choice = reader.nextByte();
         reader.nextLine();
-        
+
         switch (choice) {
             case 1:
                 IO.print("Choose an account: ");
@@ -652,7 +664,7 @@ public class CLIMenu {
 
     private static void selectAccount(byte accountSelection) {
         boolean inAccount = true;
-        
+
         while (inAccount) {
             IO.println("\n=== John Smith(CUST001) Account Operations ===");
             IO.println("Account #" + (accountSelection == 1 ? "1 (Personal)" : "2 (ISA)"));
@@ -662,10 +674,10 @@ public class CLIMenu {
             IO.println("4. Help");
             IO.println("0. Back to Accounts List");
             IO.print("Select an option: ");
-            
+
             byte choice = reader.nextByte();
             reader.nextLine();
-            
+
             switch (choice) {
                 case 1:
                     deposit();
@@ -679,7 +691,7 @@ public class CLIMenu {
                 case 4:
                     help("select accounts");
                     break;
-                case 0: 
+                case 0:
                     inAccount = false;
                     listCustomerAccounts();
                     break;
@@ -759,13 +771,13 @@ public class CLIMenu {
                 0. Back to Customer Portal
                 """);
         IO.print("Select an option: ");
-        
+
         byte choice = reader.nextByte();
         reader.nextLine();
-        
+
         String accountType = "";
         boolean validChoice = true;
-        
+
         switch (choice) {
             case 1:
                 accountType = "Personal";
@@ -773,17 +785,17 @@ public class CLIMenu {
             case 2:
                 accountType = "ISA";
                 break;
-            case 3: 
+            case 3:
                 accountType = "Business";
                 break;
-            case 4: 
+            case 4:
                 help("open account");
                 openAccount();
                 break;
             case 0:
                 customerPortal();
                 break;
-            default: 
+            default:
                 IO.println("Invalid option, Try again!\n");
                 openAccount();
                 return;

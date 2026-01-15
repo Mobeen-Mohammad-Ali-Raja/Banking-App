@@ -108,6 +108,7 @@ public class CustomerAuthentication {
         return false;
     }
 
+    // Boolean method to check if a customer exists using national insurance number
     public static boolean customerExists(String national_id){
 
         // String that contains the query that will be executed
@@ -130,5 +131,16 @@ public class CustomerAuthentication {
 
         // returns false if rs.next() is unable to execute
         return false;
+    }
+
+    // Boolean method to check if a national insurance number follows valid UK formatting
+    public static boolean validNationalIdChecker(String national_id){
+
+        /*
+           The regex checker below checks if the first two characters are letters,
+           next six are numbers and then the last character being a letter,
+           this also returns false if used String is larger than length 9
+        */
+        return national_id.matches("^[a-zA-Z]{2}\\d{6}[a-zA-Z]{1}$");
     }
 }

@@ -103,6 +103,33 @@ public class DataHandling {
         System.out.println("Withdrawn: £" + amount + " | New Balance: £" + newBalance);
     }
 
+    public static void viewTransactionHistory(int accountId, String accountType) {
+        String sql = "SELECT * FROM transactions WHERE account_id = " + accountId + " ORDER BY created_at DESC";
+
+        try (Connection conn = Main.getConnection();
+             Statement stmt = conn.createStatement();
+             ResultSet rs = stmt.executeQuery(sql)) {
+
+            System.out.println("\n=== Transaction History for " + accountType + " Account (ID: " + accountId + ") ===");
+            System.out.println("Date                | Type         | Amount      | Balance After | Description");
+
+
+            while (rs.next()) {
+                String date = rs.getString("created_at");
+                String type = rs.getString("transaction_type");
+                double amount = rs.getDouble("amount");
+                double balanceAfter = rs.getDouble("balance_after");
+                String description = rs.getString("description");
+
+                System.out.printf("%-19s | %-12s | £%-10.2f | £%-13.2f | %s%n",
+                        date, type, amount, balanceAfter, description);
+            }
+
+        } catch (SQLException e) {
+            System.out.println("Error retrieving transaction history: " + e.getMessage());
+        }
+    }
+
     private static double getAvailableFunds(double currentBalance, String accountType, boolean hasOverdraftFacility) {
         double availableFunds = currentBalance;
         double overdraftLimit = 0.0;

@@ -27,7 +27,7 @@ public abstract class Account {
         if (amount > 0) {
             this.balance += amount;
         } else {
-            System.out.println("Error: Deposit amount must be positive.");
+            IO.println("Error: Deposit amount must be positive.");
         }
     }
 
@@ -39,7 +39,7 @@ public abstract class Account {
         if (amount > 0 && this.balance >= amount) {
             this.balance -= amount;
         } else {
-            System.out.println("Error: Insufficient funds.");
+            IO.println("Error: Insufficient funds.");
         }
     }
 

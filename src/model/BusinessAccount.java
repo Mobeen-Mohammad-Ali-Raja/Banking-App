@@ -36,9 +36,9 @@ public class BusinessAccount extends Account {
         if (this.balance >= ANNUAL_FEE) {
             this.balance -= ANNUAL_FEE;
             // In a real app, you would log this transaction here
-            System.out.println("Note: Annual fee of £120 applied.");
+            IO.println("Note: Annual fee of £120 applied.");
         } else {
-            System.out.println("Warning: Insufficient funds for annual fee. Balance is now negative.");
+            IO.println("Warning: Insufficient funds for annual fee. Balance is now negative.");
             this.balance -= ANNUAL_FEE;
         }
     }
@@ -49,9 +49,9 @@ public class BusinessAccount extends Account {
     public void issueChequeBook() {
         if (!this.chequeBookIssued) {
             this.chequeBookIssued = true;
-            System.out.println("Cheque book issued for account " + this.accountNumber);
+            IO.println("Cheque book issued for account " + this.accountNumber);
         } else {
-            System.out.println("Error: Cheque book already issued.");
+            IO.println("Error: Cheque book already issued.");
         }
     }
 }

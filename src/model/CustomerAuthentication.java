@@ -131,4 +131,9 @@ public class CustomerAuthentication {
         // returns false if rs.next() is unable to execute
         return false;
     }
+
+    public static boolean validNationalIdChecker(String national_id){
+
+        return national_id.matches("^[a-zA-Z]{2}\\d{6}[a-zA-Z]{1}$");
+    }
 }

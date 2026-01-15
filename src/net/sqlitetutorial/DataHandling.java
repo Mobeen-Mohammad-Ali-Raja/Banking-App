@@ -1,0 +1,160 @@
+package net.sqlitetutorial;
+
+import model.Transaction;
+import net.sqlitetutorial.utils.AccountNumberGenerator;
+import net.sqlitetutorial.utils.SortCodeManager;
+
+import java.sql.Connection;
+import java.sql.ResultSet;
+import java.sql.SQLException;
+import java.sql.Statement;
+
+public class DataHandling {
+
+    private static final double PERSONAL_OVERDRAFT_LIMIT = 500.00;
+    private static final double BUSINESS_OVERDRAFT_LIMIT = 1000.00;
+
+
+    // Generate unique customer ID
+    public static String generateCustomerId() {
+        String prefix = "CUST";
+        int number = 1;
+
+        try (Connection conn = Main.getConnection(); Statement stmt = conn.createStatement(); ResultSet rs = stmt.executeQuery("SELECT COUNT(*) FROM customers")) {
+
+            if (rs.next()) {
+                number = rs.getInt(1) + 1;
+            }
+
+        } catch (SQLException e) {
+            System.out.println("Error generating customer ID: " + e.getMessage());
+        }
+
+        return String.format("%s%06d", prefix, number);
+    }
+
+    // Insert a new customer
+    public static void insertCustomer(String name, String niId, String photoId, String addressId) {
+        String customerId = generateCustomerId();
+        String sql = "INSERT INTO customers (customer_id, name, national_id, photo_id, address_id, created_at) " + "VALUES ('" + customerId + "', '" + name + "', '" + niId + "', '" + photoId + "', '" + addressId + "', datetime('now'))";
+        Main.runDb(sql);
+        System.out.println("Customer added with ID: " + customerId);
+    }
+
+    // Create a new account
+    public static void createAccount(String customerId, String accountType, double openingBalance) {
+        String accountNumber = AccountNumberGenerator.generateAccountNumber();
+        String sortCode = SortCodeManager.getSortCode(accountType);
+
+        int hasOverdraftFacility = accountType.equalsIgnoreCase("business") ? 1 : 0;
+
+        String sql = "INSERT INTO accounts (customer_id, account_type, account_number, sort_code, balance, opening_balance, has_overdraft_facility, created_at) " + "VALUES ('" + customerId + "', '" + accountType + "', '" + accountNumber + "', '" + sortCode + "', " + openingBalance + ", " + openingBalance + ", " + hasOverdraftFacility + ", datetime('now'))";
+        Main.runDb(sql);
+        System.out.println("Account created: " + accountNumber + " (Sort Code: " + sortCode + ")");
+    }
+
+    // Deposit money
+    public static void deposit(int accountId, double amount) {
+        if (amount <= 0) {
+            System.out.println("Error: Deposit amount must be positive");
+            return;
+        }
+
+        double currentBalance = Transaction.getAccountBalance(accountId);
+        double newBalance = currentBalance + amount;
+
+        String sql = "UPDATE accounts SET balance = " + newBalance + " WHERE account_id = " + accountId;
+        Main.runDb(sql);
+
+        Transaction.recordTransaction(accountId, "Deposit", amount, newBalance, "Deposit to account");
+        System.out.println("Deposited: £" + amount + " | New Balance: £" + newBalance);
+    }
+
+    // Withdraw money
+    public static void withdraw(int accountId, double amount) {
+        if (amount <= 0) {
+            System.out.println("Error: Withdrawal amount must be positive");
+            return;
+        }
+
+        double currentBalance = Transaction.getAccountBalance(accountId);
+        String accountType = Transaction.getAccountType(accountId);
+        boolean hasOverdraftFacility = Transaction.hasOverdraftFacility(accountId);
+
+        double availableFunds = getAvailableFunds(currentBalance, accountType, hasOverdraftFacility);
+
+        if (availableFunds < amount) {
+            System.out.println("Error: Insufficient funds. Current balance: £" + currentBalance +
+                    " | Available with overdraft: £" + availableFunds);
+            return;
+        }
+
+        double newBalance = currentBalance - amount;
+
+        String sql = "UPDATE accounts SET balance = " + newBalance + " WHERE account_id = " + accountId;
+        Main.runDb(sql);
+
+        String description = "Withdrawal from account";
+        if (newBalance < 0) {
+            description += " (Using overdraft)";
+        }
+
+        Transaction.recordTransaction(accountId, "Withdrawal", amount, newBalance, description);
+        System.out.println("Withdrawn: £" + amount + " | New Balance: £" + newBalance);
+    }
+
+    public static void viewTransactionHistory(int accountId, String accountType) {
+        String sql = "SELECT * FROM transactions WHERE account_id = " + accountId + " ORDER BY created_at DESC";
+
+        try (Connection conn = Main.getConnection();
+             Statement stmt = conn.createStatement();
+             ResultSet rs = stmt.executeQuery(sql)) {
+
+            System.out.println("\n=== Transaction History for " + accountType + " Account (ID: " + accountId + ") ===");
+            System.out.println("Date                | Type         | Amount      | Balance After | Description");
+
+
+            while (rs.next()) {
+                String date = rs.getString("created_at");
+                String type = rs.getString("transaction_type");
+                double amount = rs.getDouble("amount");
+                double balanceAfter = rs.getDouble("balance_after");
+                String description = rs.getString("description");
+
+                System.out.printf("%-19s | %-12s | £%-10.2f | £%-13.2f | %s%n",
+                        date, type, amount, balanceAfter, description);
+            }
+
+        } catch (SQLException e) {
+            System.out.println("Error retrieving transaction history: " + e.getMessage());
+        }
+    }
+
+    private static double getAvailableFunds(double currentBalance, String accountType, boolean hasOverdraftFacility) {
+        double availableFunds = currentBalance;
+        double overdraftLimit = 0.0;
+
+        if (accountType != null && accountType.equalsIgnoreCase("personal")) {
+            overdraftLimit = PERSONAL_OVERDRAFT_LIMIT;
+            availableFunds = currentBalance + overdraftLimit;
+        } else if (accountType != null && accountType.equalsIgnoreCase("business") && hasOverdraftFacility) {
+            overdraftLimit = BUSINESS_OVERDRAFT_LIMIT;
+            availableFunds = currentBalance + overdraftLimit;
+        }
+        return availableFunds;
+    }
+
+    // View all tables
+    public static void viewAllTables() {
+        String[] tables = {"customers", "accounts", "transactions"};
+        for (String table : tables) {
+            System.out.println("\n=== " + table.toUpperCase() + " ===");
+            Main.viewTable(table);
+        }
+    }
+
+    static void main() {
+
+        viewAllTables();
+    }
+}

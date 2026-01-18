@@ -1,5 +1,7 @@
+import model.Account;
 import model.Customer;
 import model.CustomerAuthentication;
+import model.Transaction;
 import net.sqlitetutorial.DataHandling;
 
 import java.util.Scanner;
@@ -631,12 +633,12 @@ public class CLIMenu {
 
     private static void listCustomerAccounts() {
         // TODO: Logic for retrieving customer accounts
-        IO.println("=== John Smith(CUST001) Accounts");
-        IO.println("""
-                No | Type       | Account Number | Sort Code | Balance
-                1  | Personal   | 12345678       | 60-60-60  | £500.00
-                2  | ISA        | 87654321       | 60-60-70  | £1000.00
-                """);
+
+
+
+        System.out.printf("=== %s (%s) Accounts === %n", currentCustomer.getName(), currentCustomer.getCustomerId());
+        Account.listCustomerAccounts(currentCustomer.getCustomerId());
+
         IO.println("1. Select Account");
         IO.println("2. Help");
         IO.println("0. Back");
@@ -666,8 +668,11 @@ public class CLIMenu {
         boolean inAccount = true;
 
         while (inAccount) {
-            IO.println("\n=== John Smith(CUST001) Account Operations ===");
-            IO.println("Account #" + (accountSelection == 1 ? "1 (Personal)" : "2 (ISA)"));
+            System.out.printf("=== %s (%s) Accounts === %n", currentCustomer.getName(), currentCustomer.getCustomerId());
+//            IO.println("Account #" + (accountSelection == 1 ? "1 (Personal)" : "2 (ISA)"));
+            Transaction.displayAccountDetails(accountSelection);
+
+
             IO.println("1. Deposit");
             IO.println("2. Withdraw");
             IO.println("3. View Transactions");
@@ -686,7 +691,7 @@ public class CLIMenu {
                     withdraw();
                     break;
                 case 3:
-                    viewTransactions();
+                    viewTransactions(accountSelection);
                     break;
                 case 4:
                     help("select accounts");
@@ -743,16 +748,15 @@ public class CLIMenu {
         }
     }
 
-    private static void viewTransactions() {
+    private static void viewTransactions(int accountSelection) {
         IO.println("\n=== View Transactions ===");
-        IO.println("1. Deposit - £100.00 - Jan 1, 2026");
-        IO.println("2. Withdrawal - £70.00 - Jan 3, 2026");
-        IO.println("3. Deposit - £250.00 - Jan 4, 2026");
+        Transaction.listTransactionHistory(accountSelection);
         IO.println("0. Back to Customer Portal");
         IO.print("Select an option: ");
 
         byte choice = reader.nextByte();
         reader.nextLine();
+
 
         if (choice == 0)
             customerPortal();

@@ -6,6 +6,8 @@ import java.sql.Connection;
 import java.sql.ResultSet;
 import java.sql.SQLException;
 import java.sql.Statement;
+import java.time.LocalDateTime;
+import java.time.format.DateTimeFormatter;
 
 public class Transaction {
 
@@ -62,5 +64,59 @@ public class Transaction {
             System.out.println("Error checking overdraft facility: " + e.getMessage());
         }
         return false;
+    }
+
+    public static void displayAccountDetails(int accountId) {
+        String sql = "SELECT account_id, account_type, account_number, sort_code, balance " +
+                "FROM accounts WHERE account_id = " + accountId;
+
+        try (Connection conn = Main.getConnection();
+             Statement stmt = conn.createStatement();
+             ResultSet rs = stmt.executeQuery(sql)) {
+
+            if (rs.next()) {
+
+                String accountType = rs.getString("account_type");
+                String accountNumber = rs.getString("account_number");
+                String sortCode = rs.getString("sort_code");
+                double balance = rs.getDouble("balance");
+
+                System.out.printf("Account #%d (%s) | Account Number: %s | Sort Code: %s | Balance: £%.2f%n", accountId, accountType, accountNumber, sortCode, balance);
+
+            }
+        } catch (SQLException e) {
+            System.out.println("Error retrieving account details: " + e.getMessage());
+        }
+    }
+
+    public static void listTransactionHistory(int accountId) {
+        String sql = "SELECT * FROM transactions WHERE account_id = " + accountId + " ORDER BY created_at DESC";
+
+        try (Connection conn = Main.getConnection();
+             Statement stmt = conn.createStatement();
+             ResultSet rs = stmt.executeQuery(sql)) {
+
+            System.out.println("\n=== Transaction History ===");
+            
+            DateTimeFormatter inputFormatter = DateTimeFormatter.ofPattern("yyyy-MM-dd HH:mm:ss");
+            DateTimeFormatter outputFormatter = DateTimeFormatter.ofPattern("MMM d, yyyy");
+            
+            while (rs.next()) {
+                String type = rs.getString("transaction_type");
+                double amount = rs.getDouble("amount");
+                double balanceAfter = rs.getDouble("balance_after");
+                String description = rs.getString("description");
+                String dateTime = rs.getString("created_at");
+                
+                LocalDateTime date = LocalDateTime.parse(dateTime, inputFormatter);
+                String formattedDate = date.format(outputFormatter);
+
+                System.out.printf("- %s | %s - £%.2f - Balance: £%.2f - %s%n", 
+                        formattedDate, type, amount, balanceAfter, description);
+            }
+
+        } catch (SQLException e) {
+            System.out.println("Error retrieving transaction history: " + e.getMessage());
+        }
     }
 }

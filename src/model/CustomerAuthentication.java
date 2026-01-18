@@ -116,7 +116,7 @@ public class CustomerAuthentication {
         SELECT name 
         FROM customers 
         WHERE customer_id  = 
-        '""" + national_id + "''";
+        '""" + national_id + "'";
 
         try (Connection conn = Main.getConnection();
              Statement stmt = conn.createStatement()) {

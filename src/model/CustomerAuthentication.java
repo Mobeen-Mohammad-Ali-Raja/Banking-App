@@ -143,4 +143,23 @@ public class CustomerAuthentication {
         */
         return national_id.matches("^[a-zA-Z]{2}\\d{6}[a-zA-Z]{1}$");
     }
+
+    public static boolean validPassportChecker(String passport){
+
+        /*
+           The regex checker below checks if the passport contains
+           nine numbers, this also returns false if used String is larger than length 9
+        */
+        return passport.matches("^\\d{9}$");
+    }
+
+    public static boolean validDrivingLicenceChecker(String drivingLicence){
+
+        /*
+           The regex checker below checks if the driving licence contains
+           sixteen of either characters and or numbers, this also returns false if used
+           String is larger than length 16
+        */
+        return drivingLicence.matches("^[a-zA-z0-9]{16}$");
+    }
 }

@@ -55,6 +55,7 @@ public class CLIMenu {
         }
     }
 
+    // User can find the customer by their national ID
     private static void findCustomer() {
         IO.println("\n=== Find Customer ===");
         IO.print("Enter CustomerID: ");
@@ -444,6 +445,7 @@ public class CLIMenu {
         }
     }
 
+    // Allows the user to switch customers
     private static void switchCustomer() {
         IO.println("\n=== Switch Customer ===");
         IO.println("This option allows you to switch to another customer session.");
@@ -578,6 +580,43 @@ public class CLIMenu {
                         3. Help - Display this help information
                         0. Cancel Operation - Return to previous menu
                         """);
+                break;
+            case "address verification":
+                IO.println("""
+                        --- Address Verification Help ---
+                        This process verifies the customer's address through documentation
+                        
+                        Acceptable documents:
+                        1. Utility Bill - Recent bill for gas, electricty or water services 
+                           (must be less than 3 months old and show customer's name and address)
+                        2. Council Tax Letter - Official council tax statement or bill
+                           (must be for the current tax year and show customer's name and address)
+                        3. Help - Display this help information  
+                        0. Cancel Operation - Return to previous menu     
+                        """);
+                break;
+            case "customer confirmation":
+                IO.println("""
+                        --- Confirm Customer Help ---
+                        Please review all customer details carefully before submission.
+                        
+                        1. Confirm and Create Customer - Save customer to database
+                        2. Edit Details - Make changes to customer information
+                        3. Help - Display this help information
+                        0. Cancel Operation - Abort customer creation
+                        """);
+                break;
+            case "open account after signup":
+                IO.println("""
+                        --- Open Account After Signup Help ---
+                        Options after successful customer creation:
+                        
+                        1. Yes, open an account now - Proceed to account creation for this customer
+                        2. No, return to customer portal - Go to the customer management menu
+                        3. Help - Display this help information
+                        0. Cancel and exit - Return to main menu
+                        """);
+                break;
             default:
                 IO.println("""
                         --- General Help ---
@@ -703,6 +742,12 @@ public class CLIMenu {
 
     private static void deposit() {
         IO.println("\n=== Deposit ===");
+
+        if (currentCustomer == null) {
+            IO.println("Error: No customer selected.");
+            return;
+        }
+
         IO.println("Enter the amount you wish to deposit into the account");
         IO.print("Enter deposit amount: £");
 
@@ -714,7 +759,15 @@ public class CLIMenu {
                 IO.println("Deposit amount must be greater than zero!\n");
                 return;
             }
+
+            IO.print("Enter Account ID:\t");
+            int accountId = reader.nextInt();
+            reader.nextLine();
+
             IO.println("Depositing: £" + amount);
+
+            DataHandling.deposit(accountId, amount);
+
             IO.println("Deposit completed successfully!\n");
         } catch (Exception e) {
             IO.println("Invalid amount entered. Please enter a numeric value.\n");
@@ -724,6 +777,10 @@ public class CLIMenu {
 
     private static void withdraw() {
         IO.println("\n=== Withdraw ===");
+
+        if (currentCustomer == null) {
+            IO.println("Error: No customer selected.");
+        }
         IO.println("Enter the amount you wish to withdraw from the account.");
         IO.print("Enter withdrawal amount: £");
 
@@ -735,7 +792,15 @@ public class CLIMenu {
                 IO.println("Withdrawal amount must be greater than zero!\n");
                 return;
             }
+
+            IO.print("Enter Account ID:\t");
+            int accountId = reader.nextInt();
+            reader.nextLine();
+
             IO.println("Withdrawing: £" + amount);
+
+            DataHandling.withdraw(accountId, amount);
+
             IO.println("Withdrawal completed\n");
         } catch (Exception e) {
             IO.println("Invalid amount entered. Please enter a numeric value.\n");

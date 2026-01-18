@@ -93,6 +93,26 @@ public abstract class Account {
             System.out.println("Error retrieving accounts: " + e.getMessage());
         }
     }
+    
+    public static int getAccountIdBySelection(String customerId, int selection) {
+        String sql = "SELECT account_id FROM accounts WHERE customer_id = '" + customerId + "' ORDER BY account_id";
+        
+        try (java.sql.Connection conn = net.sqlitetutorial.Main.getConnection();
+             java.sql.Statement stmt = conn.createStatement();
+             java.sql.ResultSet rs = stmt.executeQuery(sql)) {
+            
+            int count = 1;
+            while (rs.next()) {
+                if (count == selection) {
+                    return rs.getInt("account_id");
+                }
+                count++;
+            }
+        } catch (java.sql.SQLException e) {
+            System.out.println("Error retrieving account: " + e.getMessage());
+        }
+        return -1;
+    }
 
 
 }

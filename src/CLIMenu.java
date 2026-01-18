@@ -665,12 +665,19 @@ public class CLIMenu {
     }
 
     private static void selectAccount(byte accountSelection) {
+        int accountId = Account.getAccountIdBySelection(currentCustomer.getCustomerId(), accountSelection);
+        
+        if (accountId == -1) {
+            IO.println("Invalid account selection.");
+            listCustomerAccounts();
+            return;
+        }
+        
         boolean inAccount = true;
 
         while (inAccount) {
             System.out.printf("=== %s (%s) Accounts === %n", currentCustomer.getName(), currentCustomer.getCustomerId());
-//            IO.println("Account #" + (accountSelection == 1 ? "1 (Personal)" : "2 (ISA)"));
-            Transaction.displayAccountDetails(accountSelection);
+            Transaction.displayAccountDetails(accountId);
 
 
             IO.println("1. Deposit");
@@ -691,7 +698,7 @@ public class CLIMenu {
                     withdraw();
                     break;
                 case 3:
-                    viewTransactions(accountSelection);
+                    viewTransactions(accountId);
                     break;
                 case 4:
                     help("select accounts");

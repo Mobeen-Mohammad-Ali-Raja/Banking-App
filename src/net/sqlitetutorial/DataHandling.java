@@ -53,7 +53,7 @@ public class DataHandling {
         // Applying the business Fee logic (£120 fee deduction)
         if (accountType.equalsIgnoreCase("Business")) {
             // Requirement: Apply annual fee of £120 automatically
-            double fee = 120.00;
+            double fee = model.BusinessAccount.ANNUAL_FEE;
             if (openingBalance >= fee) {
                 openingBalance -= fee;
                 IO.println("Annual fee of £120.00 applied.");
@@ -199,7 +199,7 @@ public class DataHandling {
             return;
         }
 
-        // Update DB. Set the flag to true 
+        // Update DB. Set the flag to true
         String updateSql = "UPDATE accounts SET cheque_book_issued = 1 WHERE account_id = " + accountId;
         Main.runDb(updateSql);
         IO.println("Success: Cheque book issued.");

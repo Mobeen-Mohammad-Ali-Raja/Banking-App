@@ -779,7 +779,6 @@ public class CLIMenu {
 
             DataHandling.deposit(accountId, amount);
 
-            IO.println("Deposit completed successfully!\n");
         } catch (Exception e) {
             IO.println("Invalid amount entered. Please enter a numeric value.\n");
             reader.nextLine();
@@ -810,7 +809,6 @@ public class CLIMenu {
 
             DataHandling.withdraw(accountId, amount);
 
-            IO.println("Withdrawal completed\n");
         } catch (Exception e) {
             IO.println("Invalid amount entered. Please enter a numeric value.\n");
             reader.nextLine();

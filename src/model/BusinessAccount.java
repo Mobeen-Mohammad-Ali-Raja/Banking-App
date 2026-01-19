@@ -5,10 +5,10 @@ import java.util.List;
 public class BusinessAccount extends Account {
 
     private static final String BUSINESS_SORT_CODE = "60-70-70";
-    private static final double ANNUAL_FEE = 120.00;
+    public static final double ANNUAL_FEE = 120.00;
 
     // List of allowed business types (Simple check)
-    // Requirement: "Reject excluded types (Enterprise, PLC, Charity, Public Sector)" [cite: 76]
+    // Requirement: "Reject excluded types (Enterprise, PLC, Charity, Public Sector)"
     private static final List<String> ALLOWED_TYPES = List.of("Sole Trader", "Ltd", "Partnership");
 
     private String businessType;
@@ -28,7 +28,7 @@ public class BusinessAccount extends Account {
 
         this.businessType = businessType;
 
-        // "Apply the annual fee of £120 automatically" [cite: 77]
+        // "Apply the annual fee of £120 automatically"
         applyAnnualFee();
     }
 
@@ -41,6 +41,10 @@ public class BusinessAccount extends Account {
             IO.println("Warning: Insufficient funds for annual fee. Balance is now negative.");
             this.balance -= ANNUAL_FEE;
         }
+    }
+
+    public static boolean isEligibleForChequeBook(String businessType) {
+        return ALLOWED_TYPES.contains(businessType);
     }
 
     /**

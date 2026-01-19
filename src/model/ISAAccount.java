@@ -3,8 +3,8 @@ package model;
 public class ISAAccount extends Account {
 
     private static final String ISA_SORT_CODE = "60-60-70";
-    // Interest rate is 2.75% [cite: 68]
-    private static final double INTEREST_RATE = 0.0275;
+    // Interest rate is 2.75%
+    public static final double INTEREST_RATE = 0.0275;
 
     public ISAAccount(String customerId, double openingBalance) {
         super(customerId, ISA_SORT_CODE, openingBalance);

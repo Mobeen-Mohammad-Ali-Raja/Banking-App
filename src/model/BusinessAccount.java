@@ -8,7 +8,7 @@ public class BusinessAccount extends Account {
     public static final double ANNUAL_FEE = 120.00;
 
     // List of allowed business types (Simple check)
-    // Requirement: "Reject excluded types (Enterprise, PLC, Charity, Public Sector)" [cite: 76]
+    // Requirement: "Reject excluded types (Enterprise, PLC, Charity, Public Sector)"
     private static final List<String> ALLOWED_TYPES = List.of("Sole Trader", "Ltd", "Partnership");
 
     private String businessType;
@@ -28,7 +28,7 @@ public class BusinessAccount extends Account {
 
         this.businessType = businessType;
 
-        // "Apply the annual fee of £120 automatically" [cite: 77]
+        // "Apply the annual fee of £120 automatically"
         applyAnnualFee();
     }
 

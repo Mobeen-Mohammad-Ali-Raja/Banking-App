@@ -128,6 +128,22 @@ public class DataHandling {
         }
     }
 
+    public static boolean customerHasISA(String customerId) {
+        String sql = "SELECT COUNT(*) FROM accounts WHERE customer_id = '" + customerId + "' AND account_type = 'ISA'";
+
+        try (Connection conn = Main.getConnection();
+             Statement stmt = conn.createStatement();
+             ResultSet rs = stmt.executeQuery(sql)) {
+
+            if (rs.next()) {
+                return rs.getInt(1) > 0; // Returns true if count > 0
+            }
+        } catch (SQLException e) {
+            IO.println("Error checking ISA status: " + e.getMessage());
+        }
+        return false;
+    }
+
     static void main() {
 
         viewAllTables();

@@ -731,10 +731,10 @@ public class CLIMenu {
 
             switch (choice) {
                 case 1:
-                    deposit();
+                    deposit(accountSelection);
                     break;
                 case 2:
-                    withdraw();
+                    withdraw(accountSelection);
                     break;
                 case 3:
                     viewTransactions(accountId);
@@ -752,8 +752,10 @@ public class CLIMenu {
         }
     }
 
-    private static void deposit() {
+    private static void deposit(byte accountSelection) {
         IO.println("\n=== Deposit ===");
+
+        int accountId = Account.getAccountIdBySelection(currentCustomer.getCustomerId(), accountSelection);
 
         if (currentCustomer == null) {
             IO.println("Error: No customer selected.");
@@ -772,9 +774,6 @@ public class CLIMenu {
                 return;
             }
 
-            IO.print("Enter Account ID:\t");
-            int accountId = reader.nextInt();
-            reader.nextLine();
 
             IO.println("Depositing: £" + amount);
 
@@ -787,8 +786,10 @@ public class CLIMenu {
         }
     }
 
-    private static void withdraw() {
+    private static void withdraw(byte accountSelection) {
         IO.println("\n=== Withdraw ===");
+
+        int accountId = Account.getAccountIdBySelection(currentCustomer.getCustomerId(), accountSelection);
 
         if (currentCustomer == null) {
             IO.println("Error: No customer selected.");
@@ -804,10 +805,6 @@ public class CLIMenu {
                 IO.println("Withdrawal amount must be greater than zero!\n");
                 return;
             }
-
-            IO.print("Enter Account ID:\t");
-            int accountId = reader.nextInt();
-            reader.nextLine();
 
             IO.println("Withdrawing: £" + amount);
 

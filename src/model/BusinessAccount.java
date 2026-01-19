@@ -43,6 +43,10 @@ public class BusinessAccount extends Account {
         }
     }
 
+    public static boolean isEligibleForChequeBook(String businessType) {
+        return ALLOWED_TYPES.contains(businessType);
+    }
+
     /**
      * Issues a cheque book if one hasn't been issued yet.
      */

@@ -19,12 +19,14 @@ public class CustomerAuthentication {
             WHERE customer_id  = 
             '""" + customerId + "'");
 
+        Logger.log("Attempting to connect to database");
         try (Connection conn = Main.getConnection();
              Statement stmt = conn.createStatement()) {
             ResultSet rs = stmt.executeQuery(query);
 
             // Creating customer object when query has results
             if(rs.next()){
+                Logger.log("Creating customer object");
                 return new Customer(
                         rs.getString("customer_id"),
                         rs.getString("name"),
@@ -38,6 +40,7 @@ public class CustomerAuthentication {
 
             }
         } catch (SQLException e) {
+            Logger.log("Error message: " + e.getMessage());
             System.out.println("Error: " + e.getMessage());
         }
 
@@ -55,12 +58,14 @@ public class CustomerAuthentication {
             WHERE national_id  = 
               '""" + national_id + "'");
 
+        Logger.log("Attempting to connect to database");
         try (Connection conn = Main.getConnection();
              Statement stmt = conn.createStatement()) {
             ResultSet rs = stmt.executeQuery(query);
 
             // Creating customer object when query has results
             if(rs.next()){
+                Logger.log("Creating customer object");
                 return new Customer(
                         rs.getString("customer_id"),
                         rs.getString("name"),
@@ -75,6 +80,7 @@ public class CustomerAuthentication {
             }
 
         } catch (SQLException e) {
+            Logger.log("Error message: " + e.getMessage());
             System.out.println("Error: " + e.getMessage());
         }
 
@@ -93,14 +99,17 @@ public class CustomerAuthentication {
         WHERE customer_id  = 
         """ + customerId;
 
+        Logger.log("Attempting to connect to database");
         try (Connection conn = Main.getConnection();
              Statement stmt = conn.createStatement()) {
             ResultSet rs = stmt.executeQuery(query);
 
             // returns true if the resulting query has a result and false if it has none
+            Logger.log("Checking if customer exists through customer id");
             return rs.next();
 
         } catch (SQLException e) {
+            Logger.log("Error message: " + e.getMessage());
             System.out.println("Error: " + e.getMessage());
         }
 
@@ -118,18 +127,22 @@ public class CustomerAuthentication {
         WHERE customer_id  = 
         '""" + national_id + "'";
 
+        Logger.log("Attempting to connect to database");
         try (Connection conn = Main.getConnection();
              Statement stmt = conn.createStatement()) {
             ResultSet rs = stmt.executeQuery(query);
 
             // returns true if the resulting query has a result and false if it has none
+            Logger.log("Checking if customer exists through national id");
             return rs.next();
 
         } catch (SQLException e) {
+            Logger.log("Error message: " + e.getMessage());
             System.out.println("Error: " + e.getMessage());
         }
 
         // returns false if rs.next() is unable to execute
+        Logger.log("Customer does not exist");
         return false;
     }
 
@@ -141,6 +154,7 @@ public class CustomerAuthentication {
            next six are numbers and then the last character being a letter,
            this also returns false if used String is larger than length 9
         */
+        Logger.log("Returning national insurance number checker boolean result");
         return national_id.matches("^[a-zA-Z]{2}\\d{6}[a-zA-Z]{1}$");
     }
 
@@ -150,6 +164,7 @@ public class CustomerAuthentication {
            The regex checker below checks if the passport contains
            nine numbers, this also returns false if used String is larger than length 9
         */
+        Logger.log("Returning passport check boolean result");
         return passport.matches("^\\d{9}$");
     }
 
@@ -160,6 +175,7 @@ public class CustomerAuthentication {
            sixteen of either characters and or numbers, this also returns false if used
            String is larger than length 16
         */
+        Logger.log("Returning driving licence check boolean result");
         return drivingLicence.matches("^[a-zA-z0-9]{16}$");
     }
 }

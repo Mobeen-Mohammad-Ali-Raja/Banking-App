@@ -48,6 +48,19 @@ public class DataHandling {
 
         int hasOverdraftFacility = accountType.equalsIgnoreCase("business") ? 1 : 0;
 
+        // Applying the business Fee logic (£120 fee deduction)
+        if (accountType.equalsIgnoreCase("Business")) {
+            // Requirement: Apply annual fee of £120 automatically
+            double fee = 120.00;
+            if (openingBalance >= fee) {
+                openingBalance -= fee;
+                IO.println("Annual fee of £120.00 applied.");
+            } else {
+                IO.println("Warning: Opening balance insufficient for annual fee.");
+                openingBalance -= fee; // Balance becomes negative
+            }
+        }
+
         String sql = "INSERT INTO accounts (customer_id, account_type, account_number, sort_code, balance, opening_balance, has_overdraft_facility, created_at) " + "VALUES ('" + customerId + "', '" + accountType + "', '" + accountNumber + "', '" + sortCode + "', " + openingBalance + ", " + openingBalance + ", " + hasOverdraftFacility + ", datetime('now'))";
         Main.runDb(sql);
         System.out.println("Account created: " + accountNumber + " (Sort Code: " + sortCode + ")");

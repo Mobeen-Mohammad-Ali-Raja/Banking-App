@@ -177,6 +177,34 @@ public class DataHandling {
         IO.println("New Balance: £" + String.format("%.2f", newBalance));
     }
 
+    public static void issueChequeBook(int accountId) {
+        // Check DB: Has it already been issued
+        String checkSql = "SELECT cheque_book_issued, account_type FROM accounts WHERE account_id = " + accountId;
+
+        try (Connection conn = Main.getConnection();
+             Statement stmt = conn.createStatement();
+             ResultSet rs = stmt.executeQuery(checkSql)) {
+
+            if (rs.next()) {
+                int issued = rs.getInt("cheque_book_issued");
+
+                // Check if already issued
+                if (issued == 1) {
+                    IO.println("Error: A cheque book has already been issued for this account.");
+                    return;
+                }
+            }
+        } catch (SQLException e) {
+            IO.println("Error: " + e.getMessage());
+            return;
+        }
+
+        // Update DB. Set the flag to true 
+        String updateSql = "UPDATE accounts SET cheque_book_issued = 1 WHERE account_id = " + accountId;
+        Main.runDb(updateSql);
+        IO.println("Success: Cheque book issued.");
+    }
+
 
     static void main() {
 

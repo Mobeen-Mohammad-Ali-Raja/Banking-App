@@ -4,6 +4,8 @@ import model.Transaction;
 import net.sqlitetutorial.utils.AccountNumberGenerator;
 import net.sqlitetutorial.utils.SortCodeManager;
 
+import model.ISAAccount;
+
 import java.sql.Connection;
 import java.sql.ResultSet;
 import java.sql.SQLException;
@@ -156,6 +158,25 @@ public class DataHandling {
         }
         return false;
     }
+
+    public static void applyISAInterest(int accountId) {
+        // OOP FIX: Get the rate from the ISAAccount class, not hardcoded here.
+        double interestRate = ISAAccount.INTEREST_RATE;
+
+        double currentBalance = Transaction.getAccountBalance(accountId);
+        double interestAmount = currentBalance * interestRate;
+        double newBalance = currentBalance + interestAmount;
+
+        String sql = "UPDATE accounts SET balance = " + newBalance + " WHERE account_id = " + accountId;
+        Main.runDb(sql);
+
+        Transaction.recordTransaction(accountId, "Interest", interestAmount, newBalance, "Annual ISA Interest Applied");
+
+        IO.println("Annual Interest Rate of " + (interestRate * 100) + "% applied.");
+        IO.println("Interest Calculated: £" + String.format("%.2f", interestAmount));
+        IO.println("New Balance: £" + String.format("%.2f", newBalance));
+    }
+
 
     static void main() {
 

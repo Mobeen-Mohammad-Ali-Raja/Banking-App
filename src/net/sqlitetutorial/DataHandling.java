@@ -4,6 +4,8 @@ import model.Transaction;
 import net.sqlitetutorial.utils.AccountNumberGenerator;
 import net.sqlitetutorial.utils.SortCodeManager;
 
+import model.ISAAccount;
+
 import java.sql.Connection;
 import java.sql.ResultSet;
 import java.sql.SQLException;
@@ -47,6 +49,19 @@ public class DataHandling {
         String sortCode = SortCodeManager.getSortCode(accountType);
 
         int hasOverdraftFacility = accountType.equalsIgnoreCase("business") ? 1 : 0;
+
+        // Applying the business Fee logic (£120 fee deduction)
+        if (accountType.equalsIgnoreCase("Business")) {
+            // Requirement: Apply annual fee of £120 automatically
+            double fee = model.BusinessAccount.ANNUAL_FEE;
+            if (openingBalance >= fee) {
+                openingBalance -= fee;
+                IO.println("Annual fee of £120.00 applied.");
+            } else {
+                IO.println("Warning: Opening balance insufficient for annual fee.");
+                openingBalance -= fee; // Balance becomes negative
+            }
+        }
 
         String sql = "INSERT INTO accounts (customer_id, account_type, account_number, sort_code, balance, opening_balance, has_overdraft_facility, created_at) " + "VALUES ('" + customerId + "', '" + accountType + "', '" + accountNumber + "', '" + sortCode + "', " + openingBalance + ", " + openingBalance + ", " + hasOverdraftFacility + ", datetime('now'))";
         Main.runDb(sql);
@@ -103,32 +118,7 @@ public class DataHandling {
         System.out.println("Withdrawn: £" + amount + " | New Balance: £" + newBalance);
     }
 
-    public static void viewTransactionHistory(int accountId, String accountType) {
-        String sql = "SELECT * FROM transactions WHERE account_id = " + accountId + " ORDER BY created_at DESC";
 
-        try (Connection conn = Main.getConnection();
-             Statement stmt = conn.createStatement();
-             ResultSet rs = stmt.executeQuery(sql)) {
-
-            System.out.println("\n=== Transaction History for " + accountType + " Account (ID: " + accountId + ") ===");
-            System.out.println("Date                | Type         | Amount      | Balance After | Description");
-
-
-            while (rs.next()) {
-                String date = rs.getString("created_at");
-                String type = rs.getString("transaction_type");
-                double amount = rs.getDouble("amount");
-                double balanceAfter = rs.getDouble("balance_after");
-                String description = rs.getString("description");
-
-                System.out.printf("%-19s | %-12s | £%-10.2f | £%-13.2f | %s%n",
-                        date, type, amount, balanceAfter, description);
-            }
-
-        } catch (SQLException e) {
-            System.out.println("Error retrieving transaction history: " + e.getMessage());
-        }
-    }
 
     private static double getAvailableFunds(double currentBalance, String accountType, boolean hasOverdraftFacility) {
         double availableFunds = currentBalance;
@@ -152,6 +142,69 @@ public class DataHandling {
             Main.viewTable(table);
         }
     }
+
+    public static boolean customerHasISA(String customerId) {
+        String sql = "SELECT COUNT(*) FROM accounts WHERE customer_id = '" + customerId + "' AND account_type = 'ISA'";
+
+        try (Connection conn = Main.getConnection();
+             Statement stmt = conn.createStatement();
+             ResultSet rs = stmt.executeQuery(sql)) {
+
+            if (rs.next()) {
+                return rs.getInt(1) > 0; // Returns true if count > 0
+            }
+        } catch (SQLException e) {
+            IO.println("Error checking ISA status: " + e.getMessage());
+        }
+        return false;
+    }
+
+    public static void applyISAInterest(int accountId) {
+        // OOP FIX: Get the rate from the ISAAccount class, not hardcoded here.
+        double interestRate = ISAAccount.INTEREST_RATE;
+
+        double currentBalance = Transaction.getAccountBalance(accountId);
+        double interestAmount = currentBalance * interestRate;
+        double newBalance = currentBalance + interestAmount;
+
+        String sql = "UPDATE accounts SET balance = " + newBalance + " WHERE account_id = " + accountId;
+        Main.runDb(sql);
+
+        Transaction.recordTransaction(accountId, "Interest", interestAmount, newBalance, "Annual ISA Interest Applied");
+
+        IO.println("Annual Interest Rate of " + (interestRate * 100) + "% applied.");
+        IO.println("Interest Calculated: £" + String.format("%.2f", interestAmount));
+        IO.println("New Balance: £" + String.format("%.2f", newBalance));
+    }
+
+    public static void issueChequeBook(int accountId) {
+        // Check DB: Has it already been issued
+        String checkSql = "SELECT cheque_book_issued, account_type FROM accounts WHERE account_id = " + accountId;
+
+        try (Connection conn = Main.getConnection();
+             Statement stmt = conn.createStatement();
+             ResultSet rs = stmt.executeQuery(checkSql)) {
+
+            if (rs.next()) {
+                int issued = rs.getInt("cheque_book_issued");
+
+                // Check if already issued
+                if (issued == 1) {
+                    IO.println("Error: A cheque book has already been issued for this account.");
+                    return;
+                }
+            }
+        } catch (SQLException e) {
+            IO.println("Error: " + e.getMessage());
+            return;
+        }
+
+        // Update DB. Set the flag to true
+        String updateSql = "UPDATE accounts SET cheque_book_issued = 1 WHERE account_id = " + accountId;
+        Main.runDb(updateSql);
+        IO.println("Success: Cheque book issued.");
+    }
+
 
     static void main() {
 

@@ -10,14 +10,14 @@ import java.sql.ResultSet;
 public class CustomerAuthentication {
 
     // Validating customer existence, then creating a customer object using based on customer ID
-    public static Customer findCustomerById(int customerId){
+    public static Customer findCustomerById(String customerId){
 
         // String that contains the query that will be executed
         String query = ("""
             SELECT customer_id, name, national_id, photo_id, address_id, created_at 
             FROM customers
             WHERE customer_id  = 
-            """ + customerId);
+            '""" + customerId + "'");
 
         try (Connection conn = Main.getConnection();
              Statement stmt = conn.createStatement()) {
@@ -26,7 +26,7 @@ public class CustomerAuthentication {
             // Creating customer object when query has results
             if(rs.next()){
                 return new Customer(
-                        rs.getInt("customer_id"),
+                        rs.getString("customer_id"),
                         rs.getString("name"),
                         rs.getString("national_id"),
                         rs.getString("photo_id"),
@@ -52,7 +52,7 @@ public class CustomerAuthentication {
         String query = (""" 
             SELECT customer_id, name, national_id, photo_id, address_id, created_at 
             FROM customers 
-            where national_id  = 
+            WHERE national_id  = 
               '""" + national_id + "'");
 
         try (Connection conn = Main.getConnection();
@@ -62,7 +62,7 @@ public class CustomerAuthentication {
             // Creating customer object when query has results
             if(rs.next()){
                 return new Customer(
-                        rs.getInt("customer_id"),
+                        rs.getString("customer_id"),
                         rs.getString("name"),
                         rs.getString("national_id"),
                         rs.getString("photo_id"),
@@ -116,7 +116,7 @@ public class CustomerAuthentication {
         SELECT name 
         FROM customers 
         WHERE customer_id  = 
-        '""" + national_id + "''";
+        '""" + national_id + "'";
 
         try (Connection conn = Main.getConnection();
              Statement stmt = conn.createStatement()) {

@@ -1,3 +1,7 @@
+import model.Account;
+import model.Customer;
+import model.CustomerAuthentication;
+import model.Transaction;
 import net.sqlitetutorial.DataHandling;
 
 import java.util.Scanner;
@@ -5,6 +9,7 @@ import java.util.Scanner;
 public class CLIMenu {
     static Scanner reader = new Scanner(System.in);
     static boolean running = true;
+     static Customer currentCustomer;
 
     public static void main() {
         IO.println("== Acme Teller System ==");
@@ -52,15 +57,19 @@ public class CLIMenu {
         }
     }
 
+    // User can find the customer by their national ID
     private static void findCustomer() {
         IO.println("\n=== Find Customer ===");
         IO.print("Enter CustomerID: ");
 
         String customerId = reader.nextLine();
+        Customer customer = CustomerAuthentication.findCustomerById(customerId);
+        currentCustomer = customer;
 
         // TODO: Customer search logic
-        if (customerId.length() > 0) {
+        if (customer != null) {
             IO.println("Customer Found\n");
+
             customerPortal();
         } else {
             IO.println("Customer Not Found\n");
@@ -84,6 +93,7 @@ public class CLIMenu {
         }
     }
 
+    //    Allows users to create a new customer account
     private static void signUpCustomer() {
         IO.println("\n=== Sign Up Customer ===");
         IO.println("To create a new customer account, please provide the following information.");
@@ -168,7 +178,7 @@ public class CLIMenu {
                     IO.print("Select an option:\t");
                 } else if (photoIdType >= 1 && photoIdType <= 2) {
                     validPhotoIdType = true;
-                }  else {
+                } else {
                     IO.print("Please enter a number between 0 and 3: ");
                 }
             } catch (NumberFormatException e) {
@@ -195,7 +205,6 @@ public class CLIMenu {
             photoIdNumber = reader.nextLine();
         }
 
-        String photoId = photoIdTypeStr + ": " + photoIdNumber;
 
         // Request customer's address (utility bill, council tax letter)
         IO.println("\n--- Address Information ---");
@@ -262,21 +271,22 @@ public class CLIMenu {
         IO.println("\n--- " + addressDocumentTypeStr + " Details ---");
 
         IO.print(addressDocumentTypeStr + " Reference Number:\t");
-        String refNumber = reader.nextLine();
+        String addressId = reader.nextLine();
 
-        while (refNumber.trim().isEmpty()) {
+        while (addressId.trim().isEmpty()) {
             IO.println(addressDocumentTypeStr + " reference number cannot be empty.");
             IO.print(addressDocumentTypeStr + " Reference Number:\t");
-            refNumber = reader.nextLine();
+            addressId = reader.nextLine();
         }
 
         // Confirm full details for sign up
         IO.println("\n=== Confirm Customer Details ===");
         IO.println("Name: " + name);
         IO.println("National ID: " + nationalID);
-        IO.println("Photo ID: " + photoId);
-        IO.println("Address: " + addressDocumentTypeStr);
-        IO.println("Address Reference Number: " + refNumber);
+        IO.println("Photo ID Type: " + photoIdTypeStr);
+        IO.println("Photo ID: " + photoIdNumber);
+        IO.println("Address Document Type: " + addressDocumentTypeStr);
+        IO.println("Address Reference Number: " + addressId);
         IO.println("\n1. Confirm and Create Customer");
         IO.println("2. Edit Details");
         IO.println("3. Help");
@@ -306,9 +316,9 @@ public class CLIMenu {
                     IO.println("\n=== Confirm Customer Details ===");
                     IO.println("Name: " + name);
                     IO.println("National ID: " + nationalID);
-                    IO.println("Photo ID: " + photoId);
+                    IO.println("Photo ID: " + photoIdNumber);
                     IO.println("Address: " + addressDocumentTypeStr);
-                    IO.println("Address Reference Number: " + refNumber);
+                    IO.println("Address Reference Number: " + addressId);
                     IO.println("\n1. Confirm and Create Customer");
                     IO.println("2. Edit Details");
                     IO.println("3. Help");
@@ -328,10 +338,13 @@ public class CLIMenu {
         switch (confirmOption) {
             case 1: // Confirm and insert customer into database
                 try {
-                    DataHandling.insertCustomer(name, nationalID, photoId, refNumber);
+
+                    DataHandling.insertCustomer(name, nationalID, photoIdNumber, addressId);
+//                    Customer customer = CustomerAuthentication.findCustomerByNationalId(nationalID);
 
                     IO.println("\nCustomer created successfully!");
                     IO.println("Customer details have been saved to the database.\n");
+
 
                     // Open an account immediately or customer portal
                     IO.println("Would you like to open an account for this customer?");
@@ -434,6 +447,7 @@ public class CLIMenu {
         }
     }
 
+    // Allows the user to switch customers
     private static void switchCustomer() {
         IO.println("\n=== Switch Customer ===");
         IO.println("This option allows you to switch to another customer session.");
@@ -568,6 +582,43 @@ public class CLIMenu {
                         3. Help - Display this help information
                         0. Cancel Operation - Return to previous menu
                         """);
+                break;
+            case "address verification":
+                IO.println("""
+                        --- Address Verification Help ---
+                        This process verifies the customer's address through documentation
+                        
+                        Acceptable documents:
+                        1. Utility Bill - Recent bill for gas, electricty or water services 
+                           (must be less than 3 months old and show customer's name and address)
+                        2. Council Tax Letter - Official council tax statement or bill
+                           (must be for the current tax year and show customer's name and address)
+                        3. Help - Display this help information  
+                        0. Cancel Operation - Return to previous menu     
+                        """);
+                break;
+            case "customer confirmation":
+                IO.println("""
+                        --- Confirm Customer Help ---
+                        Please review all customer details carefully before submission.
+                        
+                        1. Confirm and Create Customer - Save customer to database
+                        2. Edit Details - Make changes to customer information
+                        3. Help - Display this help information
+                        0. Cancel Operation - Abort customer creation
+                        """);
+                break;
+            case "open account after signup":
+                IO.println("""
+                        --- Open Account After Signup Help ---
+                        Options after successful customer creation:
+                        
+                        1. Yes, open an account now - Proceed to account creation for this customer
+                        2. No, return to customer portal - Go to the customer management menu
+                        3. Help - Display this help information
+                        0. Cancel and exit - Return to main menu
+                        """);
+                break;
             default:
                 IO.println("""
                         --- General Help ---
@@ -584,12 +635,14 @@ public class CLIMenu {
     private static void customerPortal() {
         boolean inPortal = true;
         // Printf to include the customer name variable
-        IO.println("=== John Smith | CUST001 ===");
+//        IO.println("=== John Smith | CUST001 ===");
+        IO.println(currentCustomer.formattedView());
         IO.println("1. View Accounts");
         IO.println("2. Open Account");
         IO.println("3. Switch Customer");
         IO.println("4. Help");
         IO.println("0. Back to Main Menu");
+
 
         byte choice = reader.nextByte();
         reader.nextLine();
@@ -619,19 +672,19 @@ public class CLIMenu {
 
     private static void listCustomerAccounts() {
         // TODO: Logic for retrieving customer accounts
-        IO.println("=== John Smith(CUST001) Accounts");
-        IO.println("""
-                No | Type       | Account Number | Sort Code | Balance
-                1  | Personal   | 12345678       | 60-60-60  | £500.00
-                2  | ISA        | 87654321       | 60-60-70  | £1000.00
-                """);
+
+
+
+        System.out.printf("=== %s (%s) Accounts === %n", currentCustomer.getName(), currentCustomer.getCustomerId());
+        Account.listCustomerAccounts(currentCustomer.getCustomerId());
+
         IO.println("1. Select Account");
         IO.println("2. Help");
         IO.println("0. Back");
-        
+
         byte choice = reader.nextByte();
         reader.nextLine();
-        
+
         switch (choice) {
             case 1:
                 IO.print("Choose an account: ");
@@ -651,35 +704,45 @@ public class CLIMenu {
     }
 
     private static void selectAccount(byte accountSelection) {
-        boolean inAccount = true;
+        int accountId = Account.getAccountIdBySelection(currentCustomer.getCustomerId(), accountSelection);
         
+        if (accountId == -1) {
+            IO.println("Invalid account selection.");
+            listCustomerAccounts();
+            return;
+        }
+        
+        boolean inAccount = true;
+
         while (inAccount) {
-            IO.println("\n=== John Smith(CUST001) Account Operations ===");
-            IO.println("Account #" + (accountSelection == 1 ? "1 (Personal)" : "2 (ISA)"));
+            System.out.printf("=== %s (%s) Accounts === %n", currentCustomer.getName(), currentCustomer.getCustomerId());
+            Transaction.displayAccountDetails(accountId);
+
+
             IO.println("1. Deposit");
             IO.println("2. Withdraw");
             IO.println("3. View Transactions");
             IO.println("4. Help");
             IO.println("0. Back to Accounts List");
             IO.print("Select an option: ");
-            
+
             byte choice = reader.nextByte();
             reader.nextLine();
-            
+
             switch (choice) {
                 case 1:
-                    deposit();
+                    deposit(accountSelection);
                     break;
                 case 2:
-                    withdraw();
+                    withdraw(accountSelection);
                     break;
                 case 3:
-                    viewTransactions();
+                    viewTransactions(accountId);
                     break;
                 case 4:
                     help("select accounts");
                     break;
-                case 0: 
+                case 0:
                     inAccount = false;
                     listCustomerAccounts();
                     break;
@@ -689,8 +752,16 @@ public class CLIMenu {
         }
     }
 
-    private static void deposit() {
+    private static void deposit(byte accountSelection) {
         IO.println("\n=== Deposit ===");
+
+        int accountId = Account.getAccountIdBySelection(currentCustomer.getCustomerId(), accountSelection);
+
+        if (currentCustomer == null) {
+            IO.println("Error: No customer selected.");
+            return;
+        }
+
         IO.println("Enter the amount you wish to deposit into the account");
         IO.print("Enter deposit amount: £");
 
@@ -702,16 +773,26 @@ public class CLIMenu {
                 IO.println("Deposit amount must be greater than zero!\n");
                 return;
             }
+
+
             IO.println("Depositing: £" + amount);
-            IO.println("Deposit completed successfully!\n");
+
+            DataHandling.deposit(accountId, amount);
+
         } catch (Exception e) {
             IO.println("Invalid amount entered. Please enter a numeric value.\n");
             reader.nextLine();
         }
     }
 
-    private static void withdraw() {
+    private static void withdraw(byte accountSelection) {
         IO.println("\n=== Withdraw ===");
+
+        int accountId = Account.getAccountIdBySelection(currentCustomer.getCustomerId(), accountSelection);
+
+        if (currentCustomer == null) {
+            IO.println("Error: No customer selected.");
+        }
         IO.println("Enter the amount you wish to withdraw from the account.");
         IO.print("Enter withdrawal amount: £");
 
@@ -723,24 +804,26 @@ public class CLIMenu {
                 IO.println("Withdrawal amount must be greater than zero!\n");
                 return;
             }
+
             IO.println("Withdrawing: £" + amount);
-            IO.println("Withdrawal completed\n");
+
+            DataHandling.withdraw(accountId, amount);
+
         } catch (Exception e) {
             IO.println("Invalid amount entered. Please enter a numeric value.\n");
             reader.nextLine();
         }
     }
 
-    private static void viewTransactions() {
+    private static void viewTransactions(int accountSelection) {
         IO.println("\n=== View Transactions ===");
-        IO.println("1. Deposit - £100.00 - Jan 1, 2026");
-        IO.println("2. Withdrawal - £70.00 - Jan 3, 2026");
-        IO.println("3. Deposit - £250.00 - Jan 4, 2026");
+        Transaction.listTransactionHistory(accountSelection);
         IO.println("0. Back to Customer Portal");
         IO.print("Select an option: ");
 
         byte choice = reader.nextByte();
         reader.nextLine();
+
 
         if (choice == 0)
             customerPortal();
@@ -759,13 +842,13 @@ public class CLIMenu {
                 0. Back to Customer Portal
                 """);
         IO.print("Select an option: ");
-        
+
         byte choice = reader.nextByte();
         reader.nextLine();
-        
+
         String accountType = "";
         boolean validChoice = true;
-        
+
         switch (choice) {
             case 1:
                 accountType = "Personal";
@@ -773,17 +856,17 @@ public class CLIMenu {
             case 2:
                 accountType = "ISA";
                 break;
-            case 3: 
+            case 3:
                 accountType = "Business";
                 break;
-            case 4: 
+            case 4:
                 help("open account");
                 openAccount();
                 break;
             case 0:
                 customerPortal();
                 break;
-            default: 
+            default:
                 IO.println("Invalid option, Try again!\n");
                 openAccount();
                 return;
@@ -796,53 +879,108 @@ public class CLIMenu {
 
     private static void createAccount(String accountType) {
         IO.println("\n=== Create " + accountType.toUpperCase() + " Account ===");
+
+        // 1. ISA RULE: Only one per customer
+        if (accountType.equalsIgnoreCase("ISA")) {
+            if (DataHandling.customerHasISA(currentCustomer.getCustomerId())) {
+                IO.println("Error: Customer already has an ISA Account. Limit is one per customer.");
+                IO.print("\nPress Enter to return...");
+                reader.nextLine();
+                customerPortal();
+                return;
+            }
+        }
+
+        // 2. BUSINESS RULE: Validate Business Type
+        if (accountType.equalsIgnoreCase("Business")) {
+            IO.println("Please select Business Type:");
+            IO.println("""
+                    1. Sole Trader
+                    2. Ltd
+                    3. Partnership
+                    4. Charity (Not Eligible)
+                    5. Public Sector (Not Eligible)
+                    """);
+
+            IO.print("Selection: ");
+            byte typeChoice = 0;
+            try {
+                typeChoice = reader.nextByte();
+                reader.nextLine();
+            } catch (Exception e) {
+                reader.nextLine();
+            }
+
+            // Check eligibility
+            boolean isEligible = switch (typeChoice) {
+                case 1, 2, 3 -> true;
+                default -> false;
+            };
+
+            if (!isEligible) {
+                IO.println("Error: This business type is not eligible for a business account.");
+                IO.println("Eligible types: Sole Trader, Ltd, Partnership.");
+                IO.print("\nPress Enter to return...");
+                reader.nextLine();
+                return;
+            }
+        }
+
+        // 3. Set Initial Balance
         IO.println("""
                 1. Set Initial Balance
-                2. Enable Overdraft
-                3. Complete Account Creation
-                4. Help
-                0. Cancel Operation
+                2. Help
+                0. Cancel
                 """);
         IO.print("Select an option: ");
 
-        byte createChoice = reader.nextByte();
+        byte choice = reader.nextByte();
         reader.nextLine();
 
-        switch (createChoice) {
-            case 1: // TODO: Implement try catch
-                IO.print("Enter initial balance: £");
-                try {
-                    double balance = reader.nextDouble();
-                    reader.nextLine();
-                    IO.println("Initial balance set to: £" + balance);
-                } catch (Exception e) {
-                    IO.println("Invalid amount entered.\n");
-                    reader.nextLine();
-                }
-                createAccount(accountType);
-                break;
-            case 2: // Overdraft will change depending on account
-                IO.println("Overdraft Enabled!");
-                createAccount(accountType);
-                break;
-            case 3:
-                // TODO: Creating account logic added
-                IO.println("Creating account...");
-                IO.println(accountType + " Account Created!\n");
-                IO.println("=== Back to Customer Portal ===");
-                customerPortal();
-                break;
-            case 4:
-                help("create account");
-                createAccount(accountType);
-                break;
-            case 0:
-                IO.println("Account creation cancelled\n");
-                openAccount();
-                break;
-            default:
-                IO.println("Invalid option, Try again!\n");
-                createAccount(accountType);
+        if (choice == 0) {
+            IO.println("Operation cancelled.");
+            return;
+        } else if (choice == 2) {
+            help("create account");
+            createAccount(accountType); // Recursively call to restart
+            return;
+        }
+
+        IO.print("Enter initial deposit amount: £");
+        double balance = 0;
+        try {
+            balance = reader.nextDouble();
+            reader.nextLine();
+        } catch (Exception e) {
+            IO.println("Invalid amount entered.");
+            reader.nextLine();
+            return;
+        }
+
+        // 4. PERSONAL RULE: Minimum £1 needed to opening the account
+        if (accountType.equalsIgnoreCase("Personal") && balance < 1.00) {
+            IO.println("Error: Personal Accounts require a minimum opening balance of £1.00.");
+            return;
+        }
+
+        // 5. Account creation confirmations
+        IO.println("Creating " + accountType + " account with opening balance: £" + balance);
+        IO.println("1. Confirm");
+        IO.println("0. Cancel");
+        IO.print("Select: ");
+
+        byte confirm = reader.nextByte();
+        reader.nextLine();
+
+        if (confirm == 1) {
+            // Call the DataHandling method to insert into DB
+            DataHandling.createAccount(currentCustomer.getCustomerId(), accountType, balance);
+            IO.println(accountType + " Account Created Successfully!");
+
+            IO.println("=== Back to Customer Portal ===");
+            customerPortal();
+        } else {
+            IO.println("Account creation cancelled.");
         }
     }
 

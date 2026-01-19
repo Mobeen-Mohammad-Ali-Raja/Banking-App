@@ -4,7 +4,7 @@ public class Customer {
 
 
     // Private fields used to flesh out a customer's profile
-    private final int CUSTOMER_ID;
+    private final String CUSTOMER_ID;
     private final String NAME;
     private final String NATIONAL_INSURANCE_NUMBER;
     private final String PHOTO_ID;
@@ -14,7 +14,7 @@ public class Customer {
 
 
     // Constructor
-    public Customer(int customerId, String name, String nationalInsuranceNumber, String photoId, String address, String createdAt) {
+    public Customer(String customerId, String name, String nationalInsuranceNumber, String photoId, String address, String createdAt) {
         this.CUSTOMER_ID = customerId;
         this.NAME = name;
         this.NATIONAL_INSURANCE_NUMBER = nationalInsuranceNumber;
@@ -24,7 +24,7 @@ public class Customer {
 
     }
     // Getter for customer ID
-    public int getCustomerId() {
+    public String getCustomerId() {
         return CUSTOMER_ID;
     }
 

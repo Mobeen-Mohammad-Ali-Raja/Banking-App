@@ -58,4 +58,61 @@ public abstract class Account {
     public String getCustomerId() {
         return this.customerId;
     }
+
+
+    //     * Lists all accounts belonging to a customer from the database
+    public static void listCustomerAccounts(String customerId) {
+        String sql = "SELECT account_id, account_type, account_number, sort_code, balance " +
+                "FROM accounts WHERE customer_id = '" + customerId + "'";
+
+        try (java.sql.Connection conn = net.sqlitetutorial.Main.getConnection();
+             java.sql.Statement stmt = conn.createStatement();
+             java.sql.ResultSet rs = stmt.executeQuery(sql)) {
+
+            System.out.println("No | Type       | Account Number | Sort Code | Balance");
+            System.out.println("-".repeat(60));
+
+            int count = 1;
+            while (rs.next()) {
+                int accountId = rs.getInt("account_id");
+                String accountType = rs.getString("account_type");
+                String accountNumber = rs.getString("account_number");
+                String sortCode = rs.getString("sort_code");
+                double balance = rs.getDouble("balance");
+
+                System.out.printf("%-3d | %-10s | %-14s | %-9s | £%.2f%n",
+                        count, accountType, accountNumber, sortCode, balance);
+                count++;
+            }
+
+            if (count == 1) {
+                System.out.println("No accounts found for this customer.");
+            }
+
+        } catch (java.sql.SQLException e) {
+            System.out.println("Error retrieving accounts: " + e.getMessage());
+        }
+    }
+    
+    public static int getAccountIdBySelection(String customerId, int selection) {
+        String sql = "SELECT account_id FROM accounts WHERE customer_id = '" + customerId + "' ORDER BY account_id";
+        
+        try (java.sql.Connection conn = net.sqlitetutorial.Main.getConnection();
+             java.sql.Statement stmt = conn.createStatement();
+             java.sql.ResultSet rs = stmt.executeQuery(sql)) {
+            
+            int count = 1;
+            while (rs.next()) {
+                if (count == selection) {
+                    return rs.getInt("account_id");
+                }
+                count++;
+            }
+        } catch (java.sql.SQLException e) {
+            System.out.println("Error retrieving account: " + e.getMessage());
+        }
+        return -1;
+    }
+
+
 }

@@ -884,53 +884,108 @@ public class CLIMenu {
 
     private static void createAccount(String accountType) {
         IO.println("\n=== Create " + accountType.toUpperCase() + " Account ===");
+
+        // 1. ISA RULE: Only one per customer
+        if (accountType.equalsIgnoreCase("ISA")) {
+            if (DataHandling.customerHasISA(currentCustomer.getCustomerId())) {
+                IO.println("Error: Customer already has an ISA Account. Limit is one per customer.");
+                IO.print("\nPress Enter to return...");
+                reader.nextLine();
+                customerPortal();
+                return;
+            }
+        }
+
+        // 2. BUSINESS RULE: Validate Business Type
+        if (accountType.equalsIgnoreCase("Business")) {
+            IO.println("Please select Business Type:");
+            IO.println("""
+                    1. Sole Trader
+                    2. Ltd
+                    3. Partnership
+                    4. Charity (Not Eligible)
+                    5. Public Sector (Not Eligible)
+                    """);
+
+            IO.print("Selection: ");
+            byte typeChoice = 0;
+            try {
+                typeChoice = reader.nextByte();
+                reader.nextLine();
+            } catch (Exception e) {
+                reader.nextLine();
+            }
+
+            // Check eligibility
+            boolean isEligible = switch (typeChoice) {
+                case 1, 2, 3 -> true;
+                default -> false;
+            };
+
+            if (!isEligible) {
+                IO.println("Error: This business type is not eligible for a business account.");
+                IO.println("Eligible types: Sole Trader, Ltd, Partnership.");
+                IO.print("\nPress Enter to return...");
+                reader.nextLine();
+                return;
+            }
+        }
+
+        // 3. Set Initial Balance
         IO.println("""
                 1. Set Initial Balance
-                2. Enable Overdraft
-                3. Complete Account Creation
-                4. Help
-                0. Cancel Operation
+                2. Help
+                0. Cancel
                 """);
         IO.print("Select an option: ");
 
-        byte createChoice = reader.nextByte();
+        byte choice = reader.nextByte();
         reader.nextLine();
 
-        switch (createChoice) {
-            case 1: // TODO: Implement try catch
-                IO.print("Enter initial balance: £");
-                try {
-                    double balance = reader.nextDouble();
-                    reader.nextLine();
-                    IO.println("Initial balance set to: £" + balance);
-                } catch (Exception e) {
-                    IO.println("Invalid amount entered.\n");
-                    reader.nextLine();
-                }
-                createAccount(accountType);
-                break;
-            case 2: // Overdraft will change depending on account
-                IO.println("Overdraft Enabled!");
-                createAccount(accountType);
-                break;
-            case 3:
-                // TODO: Creating account logic added
-                IO.println("Creating account...");
-                IO.println(accountType + " Account Created!\n");
-                IO.println("=== Back to Customer Portal ===");
-                customerPortal();
-                break;
-            case 4:
-                help("create account");
-                createAccount(accountType);
-                break;
-            case 0:
-                IO.println("Account creation cancelled\n");
-                openAccount();
-                break;
-            default:
-                IO.println("Invalid option, Try again!\n");
-                createAccount(accountType);
+        if (choice == 0) {
+            IO.println("Operation cancelled.");
+            return;
+        } else if (choice == 2) {
+            help("create account");
+            createAccount(accountType); // Recursively call to restart
+            return;
+        }
+
+        IO.print("Enter initial deposit amount: £");
+        double balance = 0;
+        try {
+            balance = reader.nextDouble();
+            reader.nextLine();
+        } catch (Exception e) {
+            IO.println("Invalid amount entered.");
+            reader.nextLine();
+            return;
+        }
+
+        // 4. PERSONAL RULE: Minimum £1 needed to opening the account
+        if (accountType.equalsIgnoreCase("Personal") && balance < 1.00) {
+            IO.println("Error: Personal Accounts require a minimum opening balance of £1.00.");
+            return;
+        }
+
+        // 5. Account creation confirmations
+        IO.println("Creating " + accountType + " account with opening balance: £" + balance);
+        IO.println("1. Confirm");
+        IO.println("0. Cancel");
+        IO.print("Select: ");
+
+        byte confirm = reader.nextByte();
+        reader.nextLine();
+
+        if (confirm == 1) {
+            // Call the DataHandling method to insert into DB
+            DataHandling.createAccount(currentCustomer.getCustomerId(), accountType, balance);
+            IO.println(accountType + " Account Created Successfully!");
+
+            IO.println("=== Back to Customer Portal ===");
+            customerPortal();
+        } else {
+            IO.println("Account creation cancelled.");
         }
     }
 

@@ -5,7 +5,7 @@ import java.util.List;
 public class BusinessAccount extends Account {
 
     private static final String BUSINESS_SORT_CODE = "60-70-70";
-    private static final double ANNUAL_FEE = 120.00;
+    public static final double ANNUAL_FEE = 120.00;
 
     // List of allowed business types (Simple check)
     // Requirement: "Reject excluded types (Enterprise, PLC, Charity, Public Sector)" [cite: 76]

@@ -31,34 +31,39 @@ public class CLIMenu {
                 """);
         IO.print("Select option: ");
 
-        // TODO: try catch
-        byte choice = reader.nextByte();
-        reader.nextLine();
+        try {
+            byte choice = reader.nextByte();
+            reader.nextLine();
 
-        switch (choice) {
-            case 1:
-                Logger.log("1. Find Customer");
-                findCustomer();
-                break;
-            case 2:
-                Logger.log("2. Sign Up Customer");
-                signUpCustomer();
-                break;
-            case 3:
-                Logger.log("3. Switch Customer");
-                switchCustomer();
-                break;
-            case 4:
-                Logger.log("4. Help");
-                help("main menu");
-                break;
-            case 0:
-                Logger.log("0. Exit");
-                running = false;
-                break;
-            default:
-                Logger.log("Invalid option selected");
-                System.out.println("Invalid option, Try again!\n");
+            switch (choice) {
+                case 1:
+                    Logger.log("1. Find Customer");
+                    findCustomer();
+                    break;
+                case 2:
+                    Logger.log("2. Sign Up Customer");
+                    signUpCustomer();
+                    break;
+                case 3:
+                    Logger.log("3. Switch Customer");
+                    switchCustomer();
+                    break;
+                case 4:
+                    Logger.log("4. Help");
+                    help("main menu");
+                    break;
+                case 0:
+                    Logger.log("0. Exit");
+                    running = false;
+                    break;
+                default:
+                    Logger.log("Invalid option selected");
+                    System.out.println("Invalid option, Try again!\n");
+            }
+        } catch (Exception e) {
+            Logger.log("Error in main menu: " + e.getMessage());
+            IO.println("Invalid input. Please enter a number.\n");
+            reader.nextLine();
         }
     }
 
@@ -72,11 +77,9 @@ public class CLIMenu {
         Customer customer = CustomerAuthentication.findCustomerById(customerId);
         currentCustomer = customer;
 
-        // TODO: Customer search logic
         if (customer != null) {
             Logger.log("Customer Found");
             IO.println("Customer Found\n");
-
             customerPortal();
         } else {
             Logger.log("Customer Not Found");
@@ -87,19 +90,25 @@ public class CLIMenu {
                     """);
             IO.print("Select an option: ");
 
-            byte choice = reader.nextByte();
-            reader.nextLine();
+            try {
+                byte choice = reader.nextByte();
+                reader.nextLine();
 
-            if (choice == 1) {
-                Logger.log("1. Try Again");
-                findCustomer();
-            }
-            if (choice == 0) {
-                Logger.log("0. Back to Main Menu");
-                showMainMenu();
-            }else {
-                Logger.log("Invalid option selected");
-                IO.println("Invalid option, Try again!\n");
+                if (choice == 1) {
+                    Logger.log("1. Try Again");
+                    findCustomer();
+                }
+                if (choice == 0) {
+                    Logger.log("0. Back to Main Menu");
+                    showMainMenu();
+                } else {
+                    Logger.log("Invalid option selected");
+                    IO.println("Invalid option, Try again!\n");
+                }
+            } catch (Exception e) {
+                Logger.log("Error in findCustomer: " + e.getMessage());
+                IO.println("Invalid input.\n");
+                reader.nextLine();
             }
         }
     }
@@ -118,28 +127,31 @@ public class CLIMenu {
         byte option = reader.nextByte();
         reader.nextLine();
 
-        switch (option) {
-            case 1:
-                Logger.log("1. Continue with Sign Up");
-                // TODO: Logic for creating customer
-                IO.print("Creating new customer...");
-//                IO.println("Customer created successfully!\n");
-//                customerPortal();
-                createCustomer();
-                break;
-            case 2:
-                Logger.log("2. Help");
-                help("sign up");
-                signUpCustomer();
-                break;
-            case 0:
-                Logger.log("Back to Main Menu");
-                showMainMenu();
-                break;
-            default:
-                Logger.log("Invalid option selected");
-                IO.println("Invalid option, Try again\n");
-                signUpCustomer();
+        try {
+            switch (option) {
+                case 1:
+                    Logger.log("1. Continue with Sign Up");
+                    IO.print("Creating new customer...");
+                    createCustomer();
+                    break;
+                case 2:
+                    Logger.log("2. Help");
+                    help("sign up");
+                    signUpCustomer();
+                    break;
+                case 0:
+                    Logger.log("Back to Main Menu");
+                    break;
+                default:
+                    Logger.log("Invalid option selected");
+                    IO.println("Invalid option, Try again\n");
+                    signUpCustomer();
+            }
+        } catch (Exception e) {
+            Logger.log("Error in signUpCustomer: " + e.getMessage());
+            IO.println("Invalid input.\n");
+            reader.nextLine();
+            signUpCustomer();
         }
     }
 
@@ -152,14 +164,10 @@ public class CLIMenu {
         String name = reader.nextLine();
         Logger.log("Name inserted: " + name);
 
-        // TODO: Validation for full name
-
         // Request customer's National ID
         IO.print("National ID Number:\t");
         String nationalID = reader.nextLine();
         Logger.log("National ID number inserted: " + nationalID);
-
-        // TODO: Validation for national id
 
         // Request customer's Photo ID type (passport or driving license) and number
         IO.println("\n--- Photo Identification ---");
@@ -179,6 +187,7 @@ public class CLIMenu {
                 String option = reader.nextLine();
                 photoIdType = Byte.parseByte(option);
                 Logger.log("photoIdType inserted: " + photoIdType);
+
                 if (photoIdType == 0) {
                     Logger.log("0. Cancel Operation");
                     IO.println("\nOperation cancelled.");
@@ -274,7 +283,6 @@ public class CLIMenu {
                             0. Cancel Operation
                             """);
                     IO.print("Select an option:\t");
-                    continue;
                 } else if (addressDocumentType >= 1 && addressDocumentType <= 2) {
                     Logger.log("Correct option type selected");
                     validAddressDocumentType = true;
@@ -302,7 +310,6 @@ public class CLIMenu {
 
         // Request for document's ID number or Reference number
         IO.println("\n--- " + addressDocumentTypeStr + " Details ---");
-
         IO.print(addressDocumentTypeStr + " Reference Number:\t");
         String addressId = reader.nextLine();
         Logger.log("Address ID inserted: " + addressId);
@@ -382,7 +389,6 @@ public class CLIMenu {
 
                     DataHandling.insertCustomer(name, nationalID, photoIdNumber, addressId);
                     Logger.log("Data inserted into database: Name: " + name + ", National ID: " + nationalID + ", Photo ID: " + photoIdNumber + ", Adress: " + addressId);
-//                    Customer customer = CustomerAuthentication.findCustomerByNationalId(nationalID);
 
                     IO.println("\nCustomer created successfully!");
                     IO.println("Customer details have been saved to the database.\n");
@@ -407,7 +413,7 @@ public class CLIMenu {
 
                             if (option.trim().isEmpty()) {
                                 Logger.log("Option selected: empty/null");
-                                IO.print("Please enter an option (0-3): ");
+                                IO.print("Please enter an option (0-3):\t");
                                 continue;
                             }
 
@@ -416,7 +422,7 @@ public class CLIMenu {
                             if (accountChoice == 0) {
                                 Logger.log("0. Cancel and exit");
                                 IO.println("\nReturning to main menu.");
-                                showMainMenu();
+                                return;
                             } else if (accountChoice == 3) {
                                 Logger.log("3. Help");
                                 help("open account after signup");
@@ -428,7 +434,6 @@ public class CLIMenu {
                                         0. Cancel and exit
                                         """);
                                 IO.print("Select an option:\t");
-                                continue;
                             } else if (accountChoice >= 1 && accountChoice <= 2) {
                                 validAccountChoice = true;
                             } else {
@@ -444,11 +449,34 @@ public class CLIMenu {
                     if (accountChoice == 1) {
                         Logger.log("1. Yes, open an account now");
                         IO.println("\nOpening account for new customer...");
-                        openAccount();
+
+                        Customer newCustomer = CustomerAuthentication.findCustomerByNationalId(nationalID);
+
+                        if (newCustomer != null) {
+                            Logger.log("1. Yes, open an account now");
+                            currentCustomer = newCustomer;
+                            openAccount();
+                        } else {
+                            Logger.log("Error, could not retrieve the newly created customer.");
+                            IO.println("Error: Could not retrieve the newly created customer.");
+                            return;
+                        }
+
                     } else {
-                        Logger.log("2. No, return to customer portal");
-                        customerPortal();
+                        // Find the new customer and go to their portal
+                        Customer customer = CustomerAuthentication.findCustomerByNationalId(nationalID);
+
+                        if (customer != null) {
+                            Logger.log("2. No, return to customer portal");
+                            currentCustomer = customer;
+                            customerPortal();
+                        } else {
+                            Logger.log("Error, returning to main menu");
+                            IO.println("Error: Could not retrieve created customer");
+                            return;
+                        }
                     }
+                    return;
                 } catch (Exception e) {
                     Logger.log("Error message: " + e.getMessage());
                     IO.println("\n Error creating customer: " + e.getMessage());
@@ -473,26 +501,29 @@ public class CLIMenu {
                             }
 
                             errorChoice = Byte.parseByte(option);
+                            Logger.log("Error choice: " + errorChoice);
 
                             if (errorChoice == 0) {
                                 Logger.log("0. Return to main menu");
                                 IO.println("\nReturning to Main Menu");
-                                showMainMenu();
+                                return;
                             } else if (errorChoice == 1) {
                                 validErrorOption = true;
                             } else {
                                 Logger.log("Invalid option selected");
                                 IO.println("Please enter a number between 0 and 1");
                             }
-                        } catch (NumberFormatException _) {
-                            Logger.log("Error message: " + e.getMessage());
+                        } catch (NumberFormatException ex) {
+                            Logger.log("Error message: " + ex.getMessage());
                             IO.println("Please enter a valid number (0-1): ");
                         }
                     }
 
-                    Logger.log("1. Try creating customer again");
-                    IO.println("\nCreating new customer...");
-                    createCustomer();
+                    if (errorChoice == 1) {
+                        Logger.log("1. Try creating customer again");
+                        IO.println("\nCreating new customer...");
+                        createCustomer();
+                    }
                 }
                 break;
             case 2: // Edit details by starting over
@@ -518,36 +549,36 @@ public class CLIMenu {
         byte option = reader.nextByte();
         reader.nextLine();
 
-        switch (option) {
-            case 1:
-                Logger.log("1. Find Customer to Switch To");
-                IO.println("Switching to another customer session...");
-                findCustomer();
-                break;
-            case 2:
-                Logger.log("2. Help");
-                help("switch customer");
-                switchCustomer();
-                break;
-            case 0:
-                Logger.log("0. Back to Main Menu");
-                showMainMenu();
-                break;
-            default:
-                Logger.log("Invalid option selected");
-                IO.println("Invalid option, Try again!\n");
-                switchCustomer();
+        try {
+            switch (option) {
+                case 1:
+                    Logger.log("1. Find Customer to Switch To");
+                    IO.println("Switching to another customer session...");
+                    findCustomer();
+                    break;
+                case 2:
+                    Logger.log("2. Help");
+                    help("switch customer");
+                    switchCustomer();
+                    break;
+                case 0:
+                    Logger.log("0. Back to Main Menu");
+                    break;
+                default:
+                    Logger.log("Invalid option selected");
+                    IO.println("Invalid option, Try again!\n");
+                    switchCustomer();
+            }
+        } catch (Exception e) {
+            Logger.log("Error in switchCustomer: " + e.getMessage());
+            IO.println("Invalid input.\n");
+            reader.nextLine();
+            switchCustomer();
         }
-
-        IO.println("Customer session started\n");
-
-        // Go back to find customer
-        findCustomer();
     }
 
     // Using context for different cases of help to be shown
     private static void help(String context) {
-        // TODO: Add the text for each help option
         IO.println("\n=== Help ===");
 
         switch (context) {
@@ -580,10 +611,10 @@ public class CLIMenu {
                         This screen displays all accounts for the current customer.
                         Each account shows: Account Number, Type, Sort Code, and Balance.
                         
-                        Options: 
+                        Options:
                         1. Select Account - Choose an account to perform operations on
                         2. Help - Display this help information
-                        0. Back - Return to Customer Portal 
+                        0. Back - Return to Customer Portal
                         """);
                 break;
             case "select accounts":
@@ -612,7 +643,7 @@ public class CLIMenu {
                         """);
                 break;
             case "create account":
-                Logger.log("Create Acccount Help Screen");
+                Logger.log("Create Account Help Screen");
                 IO.println("""
                         --- Create Account Help ---
                         1. Set Initial Balance - Specify starting balance for the new account
@@ -622,7 +653,7 @@ public class CLIMenu {
                         0. Cancel - Abort account creation
                         """);
                 break;
-            case "sign up": // To be properly implemented
+            case "sign up":
                 Logger.log("Sign Up Help Screen");
                 IO.println("""
                         --- Sign Up Customer Help ---
@@ -631,7 +662,7 @@ public class CLIMenu {
                         After registration, you can immediately open accounts for the customer.
                         """);
                 break;
-            case "switch customer": // To be properly implemented
+            case "switch customer":
                 Logger.log("Switch Customer Help Screen");
                 IO.println("""
                         --- Switch Customer Help ---
@@ -706,56 +737,52 @@ public class CLIMenu {
     }
 
     private static void customerPortal() {
-        boolean inPortal = true;
-        // Printf to include the customer name variable
-//        IO.println("=== John Smith | CUST001 ===");
         IO.println(currentCustomer.formattedView());
         IO.println("1. View Accounts");
         IO.println("2. Open Account");
         IO.println("3. Switch Customer");
         IO.println("4. Help");
         IO.println("0. Back to Main Menu\n");
-
         IO.print("Select option: ");
 
+        try {
+            byte choice = reader.nextByte();
+            reader.nextLine();
 
-        byte choice = reader.nextByte();
-        reader.nextLine();
-
-        switch (choice) {
-            case 1:
-                Logger.log("1. View Accounts");
-                listCustomerAccounts();
-                break;
-            case 2:
-                Logger.log("2. Open Account");
-                openAccount();
-                break;
-            case 3:
-                Logger.log("3. Switch Customer");
-                inPortal = false;
-                switchCustomer();
-                break;
-            case 4:
-                Logger.log("4. Help");
-                help("customer portal");
-                break;
-            case 0:
-                Logger.log("0. Back to Main Menu");
-                inPortal = false;
-                IO.println();
-                break;
-            default:
-                Logger.log("Invalid option selected");
-                IO.println("Invalid option, Try again!\n");
+            switch (choice) {
+                case 1:
+                    Logger.log("1. View Accounts");
+                    listCustomerAccounts();
+                    break;
+                case 2:
+                    Logger.log("2. Open Account");
+                    openAccount();
+                    break;
+                case 3:
+                    Logger.log("3. Switch Customer");
+                    switchCustomer();
+                    break;
+                case 4:
+                    Logger.log("4. Help");
+                    help("customer portal");
+                    break;
+                case 0:
+                    Logger.log("0. Back to Main Menu");
+                    break;
+                default:
+                    Logger.log("Invalid option selected");
+                    IO.println("Invalid option, Try again!\n");
+                    customerPortal();
+            }
+        } catch (Exception e) {
+            Logger.log("Error in customerPortal: " + e.getMessage());
+            IO.println("Invalid input.\n");
+            reader.nextLine();
+            customerPortal();
         }
     }
 
     private static void listCustomerAccounts() {
-        // TODO: Logic for retrieving customer accounts
-
-
-
         System.out.printf("=== %s (%s) Accounts === %n", currentCustomer.getName(), currentCustomer.getCustomerId());
         Account.listCustomerAccounts(currentCustomer.getCustomerId());
 
@@ -765,28 +792,36 @@ public class CLIMenu {
 
         IO.print("Select option: ");
 
-        byte choice = reader.nextByte();
-        reader.nextLine();
+        try {
+            byte choice = reader.nextByte();
+            reader.nextLine();
 
-        switch (choice) {
-            case 1:
-                Logger.log("1. Select Account");
-                IO.print("Choose an account: ");
-                byte accountSelection = reader.nextByte();
-                reader.nextLine();
-                selectAccount(accountSelection);
-                break;
-            case 2:
-                Logger.log("2. Help");
-                help("list customer accounts");
-                break;
-            case 0:
-                Logger.log("0. Back");
-                customerPortal();
-                break;
-            default:
-                Logger.log("Invalid option selected");
-                IO.println("Invalid option, Try again!\n");
+            switch (choice) {
+                case 1:
+                    Logger.log("1. Select Account");
+                    IO.print("Choose an account: ");
+                    byte accountSelection = reader.nextByte();
+                    reader.nextLine();
+                    selectAccount(accountSelection);
+                    break;
+                case 2:
+                    Logger.log("2. Help");
+                    help("list customer accounts");
+                    break;
+                case 0:
+                    Logger.log("0. Back");
+                    customerPortal();
+                    break;
+                default:
+                    Logger.log("Invalid option selected");
+                    IO.println("Invalid option, Try again!\n");
+                    listCustomerAccounts();
+            }
+        } catch (Exception e) {
+            Logger.log("Error in listCustomerAccounts: " + e.getMessage());
+            IO.println("Invalid input.\n");
+            reader.nextLine();
+            listCustomerAccounts();
         }
     }
 
@@ -823,40 +858,46 @@ public class CLIMenu {
             IO.println("0. Back to Accounts List\n");
             IO.print("Select an option: ");
 
-            byte choice = reader.nextByte();
-            reader.nextLine();
+            try {
+                byte choice = reader.nextByte();
+                reader.nextLine();
 
-            switch (choice) {
-                case 1:
-                    Logger.log("1. Deposit");
-                    deposit(accountSelection);
-                    break;
-                case 2:
-                    Logger.log("2. Withdraw");
-                    withdraw(accountSelection);
-                    break;
-                case 3:
-                    Logger.log("3. View Transactions");
-                    viewTransactions(accountId);
-                    break;
-                case 4:
-                    // Handle the dynamic options
-                    if (accountType.equalsIgnoreCase("ISA")) {
-                        DataHandling.applyISAInterest(accountId);
-                    } else if (accountType.equalsIgnoreCase("Business")) {
-                        DataHandling.issueChequeBook(accountId);
-                    } else {
-                        help("select accounts");
-                    }
-                    break;
-                case 0:
-                    Logger.log("0. Back to Accounts List");
-                    inAccount = false;
-                    listCustomerAccounts();
-                    break;
-                default:
-                    Logger.log("Invalid option selected");
-                    IO.println("Invalid option, Try again!\n");
+                switch (choice) {
+                    case 1:
+                        Logger.log("1. Deposit");
+                        deposit(accountSelection);
+                        break;
+                    case 2:
+                        Logger.log("2. Withdraw");
+                        withdraw(accountSelection);
+                        break;
+                    case 3:
+                        Logger.log("3. View Transactions");
+                        viewTransactions(accountId);
+                        break;
+                    case 4:
+                        // Handle the dynamic options
+                        if (accountType.equalsIgnoreCase("ISA")) {
+                            DataHandling.applyISAInterest(accountId);
+                        } else if (accountType.equalsIgnoreCase("Business")) {
+                            DataHandling.issueChequeBook(accountId);
+                        } else {
+                            help("select accounts");
+                        }
+                        break;
+                    case 0:
+                        Logger.log("0. Back to Accounts List");
+                        inAccount = false;
+                        listCustomerAccounts();
+                        break;
+                    default:
+                        Logger.log("Invalid option selected");
+                        IO.println("Invalid option, Try again!\n");
+                }
+            } catch (Exception e) {
+                Logger.log("Error in selectAccount: " + e.getMessage());
+                IO.println("Invalid input.\n");
+                reader.nextLine();
             }
         }
     }
@@ -886,11 +927,11 @@ public class CLIMenu {
 
 
             IO.println("Depositing: £" + amount);
-            Logger.log("Despositing: £" + amount);
+            Logger.log("Depositing: £" + amount);
             DataHandling.deposit(accountId, amount);
 
         } catch (Exception e) {
-            Logger.log("Error message: " + e.getMessage());
+            Logger.log("Error in deposit: " + e.getMessage());
             IO.println("Invalid amount entered. Please enter a numeric value.\n");
             reader.nextLine();
         }
@@ -905,6 +946,7 @@ public class CLIMenu {
             Logger.log("Customer object is null");
             IO.println("Error: No customer selected.");
         }
+
         IO.println("Enter the amount you wish to withdraw from the account.");
         IO.print("Enter withdrawal amount: £");
 
@@ -935,17 +977,21 @@ public class CLIMenu {
         IO.println("0. Back to Customer Portal\n");
         IO.print("Select an option: ");
 
-        byte choice = reader.nextByte();
-        reader.nextLine();
+        try {
+            byte choice = reader.nextByte();
+            reader.nextLine();
 
-
-        if (choice == 0) {
-            Logger.log("0. Back to Customer Portal");
+            if (choice == 0) {
+                Logger.log("0. Back to Customer Portal");
+                customerPortal();
+            } else {
+                Logger.log("Showing transactions details");
+                IO.println("Transaction details shown\n");
+            }
+        } catch (Exception e) {
+            Logger.log("Error in viewTransactions: " + e.getMessage());
+            reader.nextLine();
             customerPortal();
-        }
-        else{
-            Logger.log("Showing transactions details");
-            IO.println("Transaction details shown\n");
         }
     }
 
@@ -961,43 +1007,50 @@ public class CLIMenu {
                 """);
         IO.print("Select an option: ");
 
-        byte choice = reader.nextByte();
-        reader.nextLine();
+        try {
+            byte choice = reader.nextByte();
+            reader.nextLine();
 
-        String accountType = "";
-        boolean validChoice = true;
+            String accountType = "";
+            boolean validChoice = true;
 
-        switch (choice) {
-            case 1:
-                Logger.log("1. Personal");
-                accountType = "Personal";
-                break;
-            case 2:
-                Logger.log("2. ISA");
-                accountType = "ISA";
-                break;
-            case 3:
-                Logger.log("3. Business");
-                accountType = "Business";
-                break;
-            case 4:
-                Logger.log("4. Help");
-                help("open account");
-                openAccount();
-                break;
-            case 0:
-                Logger.log("0. Back to Customer Portal");
-                customerPortal();
-                break;
-            default:
-                Logger.log("Invalid option selected");
-                IO.println("Invalid option, Try again!\n");
-                openAccount();
-                return;
-        }
+            switch (choice) {
+                case 1:
+                    Logger.log("1. Personal");
+                    accountType = "Personal";
+                    break;
+                case 2:
+                    Logger.log("2. ISA");
+                    accountType = "ISA";
+                    break;
+                case 3:
+                    Logger.log("3. Business");
+                    accountType = "Business";
+                    break;
+                case 4:
+                    Logger.log("4. Help");
+                    help("open account");
+                    openAccount();
+                    break;
+                case 0:
+                    Logger.log("0. Back to Customer Portal");
+                    customerPortal();
+                    break;
+                default:
+                    Logger.log("Invalid option selected");
+                    IO.println("Invalid option, Try again!\n");
+                    openAccount();
+                    return;
+            }
 
-        if (!accountType.isEmpty()) {
-            createAccount(accountType);
+            if (!accountType.isEmpty()) {
+                createAccount(accountType);
+            }
+        } catch (Exception e) {
+            Logger.log("Error in openAccount: " + e.getMessage());
+            IO.println("Invalid input.\n");
+            reader.nextLine();
+            openAccount();
         }
     }
 
@@ -1025,7 +1078,7 @@ public class CLIMenu {
                 IO.println("2. Ltd");
                 IO.println("0. Cancel");
                 IO.print("Selection: ");
-
+                // TODO: Fix try catch
                 byte typeChoice = 0;
                 try {
                     typeChoice = reader.nextByte();

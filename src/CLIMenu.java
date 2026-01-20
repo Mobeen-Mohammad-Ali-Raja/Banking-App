@@ -800,17 +800,26 @@ public class CLIMenu {
             return;
         }
 
+        // Gets the account type, so we know which menu to show
+        String accountType = Transaction.getAccountType(accountId);
         boolean inAccount = true;
 
         while (inAccount) {
             System.out.printf("=== %s (%s) Accounts === %n", currentCustomer.getName(), currentCustomer.getCustomerId());
             Transaction.displayAccountDetails(accountId);
 
-
             IO.println("1. Deposit");
             IO.println("2. Withdraw");
             IO.println("3. View Transactions");
-            IO.println("4. Help");
+
+            if (accountType.equalsIgnoreCase("ISA")) {
+                IO.println("4. Apply Annual Interest");
+            } else if (accountType.equalsIgnoreCase("Business")) {
+                IO.println("4. Issue Cheque Book");
+            } else {
+                IO.println("4. Help"); // Personal accounts just see Help here
+            }
+
             IO.println("0. Back to Accounts List\n");
             IO.print("Select an option: ");
 
@@ -831,8 +840,14 @@ public class CLIMenu {
                     viewTransactions(accountId);
                     break;
                 case 4:
-                    Logger.log("4. Help");
-                    help("select accounts");
+                    // Handle the dynamic options
+                    if (accountType.equalsIgnoreCase("ISA")) {
+                        DataHandling.applyISAInterest(accountId);
+                    } else if (accountType.equalsIgnoreCase("Business")) {
+                        DataHandling.issueChequeBook(accountId);
+                    } else {
+                        help("select accounts");
+                    }
                     break;
                 case 0:
                     Logger.log("0. Back to Accounts List");
@@ -996,103 +1011,120 @@ public class CLIMenu {
                 IO.println("Error: Customer already has an ISA Account. Limit is one per customer.");
                 IO.print("\nPress Enter to return...");
                 reader.nextLine();
-                customerPortal();
-                return;
+                return; // Goes back to Customer Portal
             }
         }
 
-        // 2. BUSINESS RULE: Validate Business Type
+        // 2. BUSINESS RULE: Validate Business Type (Now with Loop)
         if (accountType.equalsIgnoreCase("Business")) {
-            IO.println("Please select Business Type:");
-            IO.println("""
-                    1. Sole Trader
-                    2. Ltd
-                    3. Partnership
-                    4. Charity (Not Eligible)
-                    5. Public Sector (Not Eligible)
-                    """);
+            boolean validBusinessType = false;
 
-            IO.print("Selection: ");
-            byte typeChoice = 0;
-            try {
-                typeChoice = reader.nextByte();
-                reader.nextLine();
-            } catch (Exception e) {
-                reader.nextLine();
-            }
+            while (!validBusinessType) {
+                IO.println("\nPlease select Business Type:");
+                IO.println("1. Sole Trader");
+                IO.println("2. Ltd");
+                IO.println("0. Cancel");
+                IO.print("Selection: ");
 
-            // Check eligibility
-            boolean isEligible = switch (typeChoice) {
-                case 1, 2, 3 -> true;
-                default -> false;
-            };
+                byte typeChoice = 0;
+                try {
+                    typeChoice = reader.nextByte();
+                    reader.nextLine();
+                } catch (Exception e) {
+                    reader.nextLine();
+                    IO.println("Invalid input. Please enter a number.");
+                    continue; // Restarts the loop
+                }
 
-            if (!isEligible) {
-                Logger.log("Error: business type is not eligible for an account");
-                IO.println("Error: This business type is not eligible for a business account.");
-                IO.println("Eligible types: Sole Trader, Ltd, Partnership.");
-                IO.print("\nPress Enter to return...");
-                reader.nextLine();
-                return;
+                if (typeChoice == 0) {
+                    IO.println("Operation cancelled.");
+                    return;
+                }
+
+                // Check eligibility
+                if (typeChoice == 1 || typeChoice == 2) {
+                    validBusinessType = true; // Breaks the loop, moves to next step
+                } else {
+                    Logger.log("Error: business type is not eligible for an account");
+                IO.println("Error: Invalid selection. Eligible types: Sole Trader and Ltd.");
+                    // Loop continues automatically, asking again
+                }
             }
         }
 
         // 3. Set Initial Balance
-        IO.println("""
-                1. Set Initial Balance
-                2. Help
-                0. Cancel
-                """);
-        IO.print("Select an option: ");
-
-        byte choice = reader.nextByte();
-        reader.nextLine();
-
-        if (choice == 0) {
-            Logger.log("0. Cancel");
-            IO.println("Operation cancelled.");
-            openAccount();
-        } else if (choice == 2) {
-            Logger.log("2. Help");
-            help("create account");
-            createAccount(accountType); // Recursively call to restart
-            return;
-        }
-
-        IO.print("Enter initial deposit amount: £");
         double balance = 0;
-        try {
-            balance = reader.nextDouble();
-            reader.nextLine();
-        } catch (Exception e) {
-            Logger.log("Error message: " + e.getMessage());
-            IO.println("Invalid amount entered.");
-            reader.nextLine();
-            return;
+        boolean validBalance = false;
+
+        while (!validBalance) {
+            IO.println("\n--- Account Setup ---");
+            IO.println("1. Set Initial Balance");
+            IO.println("2. Help");
+            IO.println("0. Cancel");
+            IO.print("Select an option: ");
+
+            byte choice = 0;
+            try {
+                choice = reader.nextByte();
+                reader.nextLine();
+            } catch (Exception e) {
+                reader.nextLine();
+                IO.println("Invalid input.");
+                continue;
+            }
+
+            if (choice == 0) {
+                Logger.log("0. Cancel");IO.println("Operation cancelled.");
+                openAccount();
+            } else if (choice == 2) {
+                Logger.log("2. Help");help("create account");
+                continue; // Shows menu again after help
+            } else if (choice == 1) {
+                IO.print("Enter initial deposit amount: £");
+                try {
+                    balance = reader.nextDouble();
+                    reader.nextLine();
+                } catch (Exception e) {Logger.log("Error message: " + e.getMessage());
+                    IO.println("Invalid amount entered. Please try again.");
+                    reader.nextLine();
+                    continue; // Restarts the loop
+                }
+
+                // No negative money
+                if (balance < 0) {
+                    IO.println("Error: Opening balance cannot be negative.");
+                    IO.println("Please try again.");
+                    continue; // Goes back to "1. Set Initial Balance"
+                }
+
+                // Personal Rule: Min £1
+                if (accountType.equalsIgnoreCase("Personal") && balance < 1.00) {
+                    IO.println("Error: Personal Accounts require a minimum opening balance of £1.00.");
+                    continue; // Goes back to "1. Set Initial Balance"
+                }
+
+                // If checks passes, mark as valid to break the loop
+                validBalance = true;
+            } else {
+                IO.println("Invalid option.");
+            }
         }
 
-        // 4. PERSONAL RULE: Minimum £1 needed to opening the account
-        if (accountType.equalsIgnoreCase("Personal") && balance < 1.00) {
-            Logger.log("Error: Personal account balance is less than £1.00");
-            IO.println("Personal Accounts require a minimum opening balance of £1.00.");
-            createAccount(accountType);
-        }
-
-        // 5. Account creation confirmations
-        IO.println("Creating " + accountType + " account with opening balance: £" + balance);
+        // 5. Confirmation
+        IO.println("\nCreating " + accountType + " account with opening balance: £" + balance);
         IO.println("1. Confirm");
         IO.println("0. Cancel");
         IO.print("Select: ");
 
-        byte confirm = reader.nextByte();
-        reader.nextLine();
+        byte confirm = 0;
+        try {
+            confirm = reader.nextByte();
+            reader.nextLine();
+        } catch (Exception e) { reader.nextLine(); }
 
         if (confirm == 1) {
-            Logger.log("1. Confirm");
-            // Call the DataHandling method to insert into DB
             DataHandling.createAccount(currentCustomer.getCustomerId(), accountType, balance);
             IO.println(accountType + " Account Created Successfully!");
-
             IO.println("=== Back to Customer Portal ===");
             customerPortal();
         } else {

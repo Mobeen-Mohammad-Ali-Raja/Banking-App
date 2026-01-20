@@ -7,6 +7,8 @@ import model.Account;
 import model.ISAAccount;
 import model.BusinessAccount;
 
+import model.Logger;
+
 import java.sql.Connection;
 import java.sql.ResultSet;
 import java.sql.SQLException;
@@ -42,6 +44,7 @@ public class DataHandling {
         String sql = "INSERT INTO customers (customer_id, name, national_id, photo_id, address_id, created_at) " + "VALUES ('" + customerId + "', '" + name + "', '" + niId + "', '" + photoId + "', '" + addressId + "', datetime('now'))";
         Main.runDb(sql);
         System.out.println("Customer added with ID: " + customerId);
+        Logger.log("CUSTOMER CREATED: " + customerId + " | Name: " + name);
     }
 
     // Create a new account
@@ -52,6 +55,8 @@ public class DataHandling {
         // Check to see if it contains "Business". Example "Business (Ltd)" etc.
         boolean isBusiness = accountType.toUpperCase().contains("BUSINESS");
         int hasOverdraftFacility = isBusiness ? 1 : 0;
+
+        Logger.log("ACCOUNT CREATION ATTEMPT: Customer: " + customerId + " | Type: " + accountType);
 
         // Applying the business Fee logic (£120 fee deduction)
         if (isBusiness) {
@@ -68,12 +73,14 @@ public class DataHandling {
         String sql = "INSERT INTO accounts (customer_id, account_type, account_number, sort_code, balance, opening_balance, has_overdraft_facility, created_at) " + "VALUES ('" + customerId + "', '" + accountType + "', '" + accountNumber + "', '" + sortCode + "', " + openingBalance + ", " + openingBalance + ", " + hasOverdraftFacility + ", datetime('now'))";
         Main.runDb(sql);
         System.out.println("Account created: " + accountNumber + " (Sort Code: " + sortCode + ")");
+        Logger.log("ACCOUNT CREATED SUCCESS: " + accountNumber + " | Sort: " + sortCode);
     }
 
     // Deposit money
     public static void deposit(int accountId, double amount) {
         if (amount <= 0) {
             System.out.println("Error: Deposit amount must be positive");
+            //Logger.log("WARNING: Attempted negative deposit on Account " + accountId);
             return;
         }
 
@@ -162,21 +169,22 @@ public class DataHandling {
     }
 
     public static void applyISAInterest(int accountId) {
-        // CHECK: Has it been applied this YEAR?
+        // Check if it been applied this YEAR
         if (hasAppliedISAInterest(accountId)) {
             IO.println("Error: Annual interest has already been applied to this account this year.");
+            Logger.log("WARNING: Duplicate Interest Application attempted on Account " + accountId); // NEW
             return;
         }
 
-        double interestRate = ISAAccount.INTEREST_RATE;
         double currentBalance = Transaction.getAccountBalance(accountId);
 
-        // Don't get interest on empty accounts
+        // Doesnt give free money to empty accounts
         if (currentBalance <= 0) {
             IO.println("Error: Cannot apply interest to an account with zero or negative balance.");
             return;
         }
 
+        double interestRate = ISAAccount.INTEREST_RATE;
         double interestAmount = currentBalance * interestRate;
         double newBalance = currentBalance + interestAmount;
 
@@ -192,17 +200,14 @@ public class DataHandling {
 
     // Check if ISA yearly interest
     public static boolean hasAppliedISAInterest(int accountId) {
-        // SQLite query to find Interest transactions for this account created THIS YEAR (YYYY)
-        // This prevents applying interest multiple times in 2026, for example.
         String sql = "SELECT COUNT(*) FROM transactions WHERE account_id = " + accountId +
                 " AND transaction_type = 'Interest' AND strftime('%Y', created_at) = strftime('%Y', 'now')";
 
         try (Connection conn = Main.getConnection();
              Statement stmt = conn.createStatement();
              ResultSet rs = stmt.executeQuery(sql)) {
-
             if (rs.next()) {
-                return rs.getInt(1) > 0; // Returns true if we found a record for this year
+                return rs.getInt(1) > 0;
             }
         } catch (SQLException e) {
             IO.println("Error checking interest status: " + e.getMessage());
@@ -241,6 +246,7 @@ public class DataHandling {
                 // Check if already issued
                 if (issued == 1) {
                     IO.println("Error: A cheque book has already been issued for this account.");
+                    Logger.log("WARNING: Duplicate Cheque Book request for Account " + accountId); // NEW
                     return;
                 }
             }
@@ -253,6 +259,7 @@ public class DataHandling {
         String updateSql = "UPDATE accounts SET cheque_book_issued = 1 WHERE account_id = " + accountId;
         Main.runDb(updateSql);
         IO.println("Success: Cheque book issued.");
+        Logger.log("CHEQUE BOOK ISSUED: Account " + accountId);
     }
 
     static void main() {

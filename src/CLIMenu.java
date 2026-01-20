@@ -844,19 +844,19 @@ public class CLIMenu {
         int accountId = Account.getAccountIdBySelection(currentCustomer.getCustomerId(), accountSelection);
 
         if (accountId == -1) {
-            Logger.log("Invalid account selected");
+            Logger.log("Error: User selected invalid account index: " + accountSelection);
             IO.println("Invalid account selection.");
             listCustomerAccounts();
             return;
         }
 
-        // Gets the account type
         String accountType = Transaction.getAccountType(accountId);
-
         boolean isBusiness = accountType.toUpperCase().contains("BUSINESS");
         boolean isISA = accountType.equalsIgnoreCase("ISA");
-
         boolean inAccount = true;
+
+        // Log entry
+        Logger.log("User entered Account Menu for Account ID: " + accountId + " (" + accountType + ")");
 
         while (inAccount) {
             System.out.printf("=== %s (%s) Accounts === %n", currentCustomer.getName(), currentCustomer.getCustomerId());
@@ -866,7 +866,6 @@ public class CLIMenu {
             IO.println("2. Withdraw");
             IO.println("3. View Transactions");
 
-            // Show specific options AND Help
             if (isISA) {
                 IO.println("4. Apply Annual Interest");
                 IO.println("5. Help");
@@ -890,48 +889,47 @@ public class CLIMenu {
 
             switch (choice) {
                 case 1:
-                    Logger.log("1. Deposit");
+                    Logger.log("User Selected: 1. Deposit");
                     deposit(accountSelection);
                     break;
                 case 2:
-                    Logger.log("2. Withdraw");
+                    Logger.log("User Selected: 2. Withdraw");
                     withdraw(accountSelection);
                     break;
                 case 3:
-                    Logger.log("3. View Transactions");
+                    Logger.log("User Selected: 3. View Transactions");
                     viewTransactions(accountId);
                     break;
                 case 4:
-                    // Action vs Help depending on type
                     if (isISA) {
+                        Logger.log("User Selected: 4. Apply ISA Interest"); // NEW
                         DataHandling.applyISAInterest(accountId);
                     } else if (isBusiness) {
+                        Logger.log("User Selected: 4. Issue Cheque Book"); // NEW
                         DataHandling.issueChequeBook(accountId);
                     } else {
-                        // Personal Account hits Help here
-                        Logger.log("4. Help (Personal)");
+                        Logger.log("User Selected: 4. Help (Personal)");
                         help("account personal");
                     }
                     break;
                 case 5:
-                    // FIX 3: Handle the new option 5 for ISA/Business
                     if (isISA) {
-                        Logger.log("5. Help (ISA)");
+                        Logger.log("User Selected: 5. Help (ISA)");
                         help("account isa");
                     } else if (isBusiness) {
-                        Logger.log("5. Help (Business)");
+                        Logger.log("User Selected: 5. Help (Business)");
                         help("account business");
                     } else {
                         IO.println("Invalid option.");
                     }
                     break;
                 case 0:
-                    Logger.log("0. Back to Accounts List");
+                    Logger.log("User Selected: 0. Back");
                     inAccount = false;
                     listCustomerAccounts();
                     break;
                 default:
-                    Logger.log("Invalid option selected");
+                    Logger.log("Invalid Option Selected in Account Menu");
                     IO.println("Invalid option, Try again!\n");
             }
         }
@@ -962,7 +960,7 @@ public class CLIMenu {
 
 
             IO.println("Depositing: £" + amount);
-            Logger.log("Despositing: £" + amount);
+            Logger.log("Depositing: £" + amount);
             DataHandling.deposit(accountId, amount);
 
         } catch (Exception e) {
@@ -1080,21 +1078,21 @@ public class CLIMenu {
     private static void createAccount(String accountType) {
         IO.println("\n=== Create " + accountType.toUpperCase() + " Account ===");
 
-        // Only ISA one per customer
+        // 1. ISA Check
         if (accountType.equalsIgnoreCase("ISA")) {
             if (DataHandling.customerHasISA(currentCustomer.getCustomerId())) {
-                Logger.log("Error: Customer has existing ISA Account");
+                Logger.log("Blocked: Customer " + currentCustomer.getCustomerId() + " attempted second ISA.");
                 IO.println("Error: Customer already has an ISA Account. Limit is one per customer.");
                 IO.print("\nPress Enter to return...");
                 reader.nextLine();
-                return; // Goes back to Customer Portal
+                return;
             }
         }
 
-        // Allow only one business account per customer
+        // 2. Business Check
         if (accountType.equalsIgnoreCase("Business")) {
             if (DataHandling.customerHasBusiness(currentCustomer.getCustomerId())) {
-                Logger.log("Error: Customer has existing Business Account");
+                Logger.log("Blocked: Customer " + currentCustomer.getCustomerId() + " attempted second Business Account.");
                 IO.println("Error: Customer already has a Business Account. Limit is one per customer.");
                 IO.print("\nPress Enter to return...");
                 reader.nextLine();
@@ -1102,10 +1100,9 @@ public class CLIMenu {
             }
         }
 
-        // Validate Business Type (Now with Loop)
+        // 3. Business Type Selection
         if (accountType.equalsIgnoreCase("Business")) {
             boolean validBusinessType = false;
-
             while (!validBusinessType) {
                 IO.println("\nPlease select Business Type:");
                 IO.println("1. Sole Trader");
@@ -1119,16 +1116,17 @@ public class CLIMenu {
                     reader.nextLine();
                 } catch (Exception e) {
                     reader.nextLine();
+                    Logger.log("Invalid Input during Business Type Selection");
                     IO.println("Invalid input. Please enter a number.");
-                    continue; // Restarts the loop
+                    continue;
                 }
 
                 if (typeChoice == 0) {
+                    Logger.log("User Cancelled Business Account Creation");
                     IO.println("Operation cancelled.");
                     return;
                 }
 
-                // Check eligibility
                 if (typeChoice == 1) {
                     accountType = "Business (Sole Trader)";
                     validBusinessType = true;
@@ -1136,13 +1134,13 @@ public class CLIMenu {
                     accountType = "Business (Ltd)";
                     validBusinessType = true;
                 } else {
-                    Logger.log("Error: business type is not eligible for an account");
+                    Logger.log("Invalid Business Type Selection: " + typeChoice);
                     IO.println("Error: Invalid selection. Eligible types: Sole Trader and Ltd.");
                 }
             }
         }
 
-        // 3. Set Initial Balance
+        // 4. Balance Selection with Logging
         double balance = 0;
         boolean validBalance = false;
 
@@ -1159,41 +1157,41 @@ public class CLIMenu {
                 reader.nextLine();
             } catch (Exception e) {
                 reader.nextLine();
-                IO.println("Invalid input.");
                 continue;
             }
 
             if (choice == 0) {
-                Logger.log("0. Cancel");IO.println("Operation cancelled.");
-                openAccount();
+                Logger.log("User Cancelled Account Creation");
+                IO.println("Operation cancelled.");
+                return;
             } else if (choice == 2) {
-                Logger.log("2. Help");help("create account");
-                continue; // Shows menu again after help
+                help("create account");
+                continue;
             } else if (choice == 1) {
                 IO.print("Enter initial deposit amount: £");
                 try {
                     balance = reader.nextDouble();
                     reader.nextLine();
-                } catch (Exception e) {Logger.log("Error message: " + e.getMessage());
+                } catch (Exception e) {
+                    Logger.log("Input Error: Invalid non-numeric balance entered");
                     IO.println("Invalid amount entered. Please try again.");
                     reader.nextLine();
-                    continue; // Restarts the loop
+                    continue;
                 }
 
-                // No negative money
+                // --- NEW LOGGING FOR VALIDATION FAILURES ---
                 if (balance < 0) {
+                    Logger.log("Validation Fail: User entered negative balance: " + balance);
                     IO.println("Error: Opening balance cannot be negative.");
-                    IO.println("Please try again.");
-                    continue; // Goes back to "1. Set Initial Balance"
+                    continue;
                 }
 
-                // Personal Rule: Min £1
                 if (accountType.equalsIgnoreCase("Personal") && balance < 1.00) {
+                    Logger.log("Validation Fail: Personal Account balance < £1.00");
                     IO.println("Error: Personal Accounts require a minimum opening balance of £1.00.");
-                    continue; // Goes back to "1. Set Initial Balance"
+                    continue;
                 }
 
-                // If checks passes, mark as valid to break the loop
                 validBalance = true;
             } else {
                 IO.println("Invalid option.");
@@ -1213,12 +1211,14 @@ public class CLIMenu {
         } catch (Exception e) { reader.nextLine(); }
 
         if (confirm == 1) {
+            Logger.log("User Confirmed Creation of " + accountType + " Account.");
             DataHandling.createAccount(currentCustomer.getCustomerId(), accountType, balance);
+
             IO.println(accountType + " Account Created Successfully!");
             IO.println("=== Back to Customer Portal ===");
             customerPortal();
         } else {
-            Logger.log("0. Cancel");
+            Logger.log("User Cancelled Confirmation.");
             IO.println("Account creation cancelled.");
         }
     }

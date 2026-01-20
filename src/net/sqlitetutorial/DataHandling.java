@@ -2,9 +2,10 @@ package net.sqlitetutorial;
 
 import model.Transaction;
 import net.sqlitetutorial.utils.AccountNumberGenerator;
-import net.sqlitetutorial.utils.SortCodeManager;
 
+import model.Account;
 import model.ISAAccount;
+import model.BusinessAccount;
 
 import java.sql.Connection;
 import java.sql.ResultSet;
@@ -46,20 +47,21 @@ public class DataHandling {
     // Create a new account
     public static void createAccount(String customerId, String accountType, double openingBalance) {
         String accountNumber = AccountNumberGenerator.generateAccountNumber();
-        String sortCode = SortCodeManager.getSortCode(accountType);
+        String sortCode = Account.getSortCodeForType(accountType);
 
-        int hasOverdraftFacility = accountType.equalsIgnoreCase("business") ? 1 : 0;
+        // Check to see if it contains "Business". Example "Business (Ltd)" etc.
+        boolean isBusiness = accountType.toUpperCase().contains("BUSINESS");
+        int hasOverdraftFacility = isBusiness ? 1 : 0;
 
         // Applying the business Fee logic (£120 fee deduction)
-        if (accountType.equalsIgnoreCase("Business")) {
-            // Requirement: Apply annual fee of £120 automatically
-            double fee = model.BusinessAccount.ANNUAL_FEE;
+        if (isBusiness) {
+            double fee = BusinessAccount.ANNUAL_FEE;
             if (openingBalance >= fee) {
                 openingBalance -= fee;
                 IO.println("Annual fee of £120.00 applied.");
             } else {
                 IO.println("Warning: Opening balance insufficient for annual fee.");
-                openingBalance -= fee; // Balance becomes negative
+                openingBalance -= fee;
             }
         }
 
@@ -127,7 +129,7 @@ public class DataHandling {
         if (accountType != null && accountType.equalsIgnoreCase("personal")) {
             overdraftLimit = PERSONAL_OVERDRAFT_LIMIT;
             availableFunds = currentBalance + overdraftLimit;
-        } else if (accountType != null && accountType.equalsIgnoreCase("business") && hasOverdraftFacility) {
+        } else if (accountType != null && accountType.toUpperCase().contains("BUSINESS") && hasOverdraftFacility) {
             overdraftLimit = BUSINESS_OVERDRAFT_LIMIT;
             availableFunds = currentBalance + overdraftLimit;
         }

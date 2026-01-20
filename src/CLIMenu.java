@@ -714,7 +714,9 @@ public class CLIMenu {
         IO.println("2. Open Account");
         IO.println("3. Switch Customer");
         IO.println("4. Help");
-        IO.println("0. Back to Main Menu");
+        IO.println("0. Back to Main Menu\n");
+
+        IO.print("Select option: ");
 
 
         byte choice = reader.nextByte();
@@ -759,7 +761,9 @@ public class CLIMenu {
 
         IO.println("1. Select Account");
         IO.println("2. Help");
-        IO.println("0. Back");
+        IO.println("0. Back\n");
+
+        IO.print("Select option: ");
 
         byte choice = reader.nextByte();
         reader.nextLine();
@@ -807,7 +811,7 @@ public class CLIMenu {
             IO.println("2. Withdraw");
             IO.println("3. View Transactions");
             IO.println("4. Help");
-            IO.println("0. Back to Accounts List");
+            IO.println("0. Back to Accounts List\n");
             IO.print("Select an option: ");
 
             byte choice = reader.nextByte();
@@ -913,7 +917,7 @@ public class CLIMenu {
     private static void viewTransactions(int accountSelection) {
         IO.println("\n=== View Transactions ===");
         Transaction.listTransactionHistory(accountSelection);
-        IO.println("0. Back to Customer Portal");
+        IO.println("0. Back to Customer Portal\n");
         IO.print("Select an option: ");
 
         byte choice = reader.nextByte();
@@ -1047,7 +1051,7 @@ public class CLIMenu {
         if (choice == 0) {
             Logger.log("0. Cancel");
             IO.println("Operation cancelled.");
-            return;
+            openAccount();
         } else if (choice == 2) {
             Logger.log("2. Help");
             help("create account");
@@ -1070,8 +1074,8 @@ public class CLIMenu {
         // 4. PERSONAL RULE: Minimum £1 needed to opening the account
         if (accountType.equalsIgnoreCase("Personal") && balance < 1.00) {
             Logger.log("Error: Personal account balance is less than £1.00");
-            IO.println("Error: Personal Accounts require a minimum opening balance of £1.00.");
-            return;
+            IO.println("Personal Accounts require a minimum opening balance of £1.00.");
+            createAccount(accountType);
         }
 
         // 5. Account creation confirmations

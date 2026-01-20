@@ -159,32 +159,70 @@ public class CLIMenu {
         IO.println("\n=== Create New Customer===");
         IO.println("Please enter the following information:\n");
 
-        // Request customer's full name
-        IO.print("Full Name:\t");
-        String name = reader.nextLine();
-        Logger.log("Name inserted: " + name);
+        // Request customer's full name with validation
+        String name = "";
+        boolean validName = false;
+        while (!validName) {
+            IO.print("Full Name:\t");
+            name = reader.nextLine().trim();
+            Logger.log("Name inserted: " + name);
 
-        // Request customer's National ID
-        IO.print("National ID Number:\t");
-        String nationalID = reader.nextLine();
-        Logger.log("National ID number inserted: " + nationalID);
+            if (name.isEmpty()) {
+                IO.println("Error: Name cannot be empty.");
+            } else if (name.length() < 2) {
+                IO.println("Error: Name must be at least 2 characters long.");
+            } else if (name.length() > 60) {
+                IO.println("Error: Name cannot exceed 60 characters.");
+            } else {
+                validName = true;
+            }
+        }
 
-        // Request customer's Photo ID type (passport or driving license) and number
+        // Request customer's National ID with validation
+        String nationalID = "";
+        boolean validNationalId = false;
+        while (!validNationalId) {
+            IO.print("National ID Number:\t");
+            nationalID = reader.nextLine().trim().toUpperCase();
+            Logger.log("National ID number inserted: " + nationalID);
+
+            if (nationalID.isEmpty()) {
+                IO.println("Error: National ID cannot be empty.");
+            } else if (!CustomerAuthentication.validNationalIdChecker(nationalID)) {
+                IO.println("Error: Invalid National ID format. Expected format: 2 letters, 6 numbers, 1 letter (e.g, AB123456C");
+            } else {
+                // Checking if national ID already exists in database
+                Customer existingCustomer = CustomerAuthentication.findCustomerByNationalId(nationalID);
+                if (existingCustomer != null) {
+                    IO.println("Error: This National ID is already registered.");
+                } else {
+                    validNationalId = true;
+                }
+            }
+        }
+
+        // Request customer's Photo ID type (passport or driving license) and number with validation
         IO.println("\n--- Photo Identification ---");
-        IO.println("""
-                1. Passport
-                2. Driving License
-                3. Help
-                0. Cancel Operation
-                """);
-        IO.print("Select an option:\t");
-
         byte photoIdType = 0;
         boolean validPhotoIdType = false;
+        String photoIdTypeStr = "";
 
         while (!validPhotoIdType) {
+            IO.println("""
+                    1. Passport
+                    2. Driving License
+                    3. Help
+                    0. Cancel Operation
+                    """);
+            IO.print("Select an option:\t");
+
             try {
-                String option = reader.nextLine();
+                String option = reader.nextLine().trim();
+                if (option.isEmpty()) {
+                    Logger.log("Invalid option selected");
+                    IO.println("Please enter an option.");
+                    continue;
+                }
                 photoIdType = Byte.parseByte(option);
                 Logger.log("photoIdType inserted: " + photoIdType);
 
@@ -196,15 +234,14 @@ public class CLIMenu {
                 } else if (photoIdType == 3) {
                     Logger.log("3. Help");
                     help("photo id");
-                    IO.println("\n--- Photo Identification ---");
-                    IO.println("""
-                            1. Passport
-                            2. Driving License
-                            3. Help
-                            0. Cancel Operation
-                            """);
-                    IO.print("Select an option:\t");
-                } else if (photoIdType >= 1 && photoIdType <= 2) {
+                    continue;
+                } else if (photoIdType == 1) {
+                    Logger.log("Photo id type: Passport");
+                    photoIdTypeStr = "Passport";
+                    validPhotoIdType = true;
+                } else if (photoIdType == 2) {
+                    Logger.log("Photo id type: Driving License");
+                    photoIdTypeStr = "Driving License";
                     validPhotoIdType = true;
                 } else {
                     Logger.log("Invalid option selected");
@@ -216,45 +253,45 @@ public class CLIMenu {
             }
         }
 
-        String photoIdTypeStr = "";
-        switch (photoIdType) {
-            case 1:
-                Logger.log("Photo id type: Passport");
-                photoIdTypeStr = "Passport";
-                break;
-            case 2:
-                Logger.log("Photo id type: Driving License");
-                photoIdTypeStr = "Driving License";
-                break;
-        }
+        // Request photo ID number with validation
+        String photoIdNumber = "";
+        boolean validPhotoNumber = false;
 
-        IO.print("Photo ID Number: ");
-        String photoIdNumber = reader.nextLine();
-        Logger.log("Photo ID Number inserted: " + photoIdNumber);
-
-        while (photoIdNumber.trim().isEmpty()) {
-            Logger.log("Photo ID Number inserted: empty/null");
-            IO.println("Photo ID number cannot be empty.");
+        while (!validPhotoNumber) {
             IO.print("Photo ID Number:\t");
-            photoIdNumber = reader.nextLine();
+            photoIdNumber = reader.nextLine().trim().toUpperCase();
+            Logger.log("Photo ID Number inserted: " + photoIdNumber);
+
+            if (photoIdNumber.trim().isEmpty()) {
+                Logger.log("Photo ID Number inserted: empty/null");
+                IO.println("Error: Photo ID number cannot be empty.");
+            } else if (photoIdTypeStr.equals("Passport") && !CustomerAuthentication.validPassportChecker(photoIdNumber)) {
+                IO.println("Error: Invalid Passport number. Expected format: 9 digits (e.g, 123456789)");
+            } else if (photoIdTypeStr.equals("Driving License") && !CustomerAuthentication.validDrivingLicenceChecker(photoIdNumber)) {
+                IO.println("Error: Invalid Driving License number. Expected format: 16 alphanumeric characters (e.g, MORGA7531162M9IJ");
+            } else {
+                validPhotoNumber = true;
+            }
         }
 
 
-        // Request customer's address (utility bill, council tax letter)
+        // Request customer's address (utility bill, council tax letter) with validation
         IO.println("\n--- Address Information ---");
-        IO.println("""
-                Please select the address verification document provided:
-                1. Utility Bill (gas, electricity, water)
-                2. Council Tax Letter
-                3. Help
-                0. Cancel Operation
-                """);
-        IO.print("Select an option:\t");
-
         byte addressDocumentType = 0;
         boolean validAddressDocumentType = false;
+        String addressDocumentTypeStr = "";
 
         while (!validAddressDocumentType) {
+            IO.println("""
+                    Please select the address verification document provided:
+                    1. Utility Bill (gas, electricity, water)
+                    2. Council Tax Letter
+                    3. Help
+                    0. Cancel Operation
+                    """);
+            IO.print("Select an option:\t");
+
+
             try {
                 String option = reader.nextLine();
 
@@ -263,7 +300,6 @@ public class CLIMenu {
                     IO.print("Please enter an option (0-3):\t");
                     continue;
                 }
-
                 addressDocumentType = Byte.parseByte(option);
 
                 if (addressDocumentType == 0) {
@@ -274,17 +310,14 @@ public class CLIMenu {
                 } else if (addressDocumentType == 3) {
                     Logger.log("3. Help");
                     help("address verification");
-                    IO.println("\n--- Address Information ---");
-                    IO.println("""
-                            Please select the address verification document provided:
-                            1. Utility Bill (gas, electricity, water)
-                            2. Council Tax Letter
-                            3. Help
-                            0. Cancel Operation
-                            """);
-                    IO.print("Select an option:\t");
-                } else if (addressDocumentType >= 1 && addressDocumentType <= 2) {
-                    Logger.log("Correct option type selected");
+                    continue;
+                } else if (addressDocumentType == 1) {
+                    Logger.log("Utility Bill type selected");
+                    addressDocumentTypeStr = "Utility Bill";
+                    validAddressDocumentType = true;
+                } else if (addressDocumentType == 2) {
+                    Logger.log("Council Tax Letter type selected");
+                    addressDocumentTypeStr = "Council Tax Letter";
                     validAddressDocumentType = true;
                 } else {
                     Logger.log("Invalid option selected");
@@ -296,29 +329,27 @@ public class CLIMenu {
             }
         }
 
-        String addressDocumentTypeStr = "";
-        switch (addressDocumentType) {
-            case 1:
-                Logger.log("Utility Bill type selected");
-                addressDocumentTypeStr = "Utility Bill";
-                break;
-            case 2:
-                Logger.log("Council Tax Letter type selected");
-                addressDocumentTypeStr = "Council Tax Letter";
-                break;
-        }
 
-        // Request for document's ID number or Reference number
+        // Request for document's ID number or Reference number with validation
         IO.println("\n--- " + addressDocumentTypeStr + " Details ---");
-        IO.print(addressDocumentTypeStr + " Reference Number:\t");
-        String addressId = reader.nextLine();
-        Logger.log("Address ID inserted: " + addressId);
+        String addressId = "";
+        boolean validRefNumber = false;
 
-        while (addressId.trim().isEmpty()) {
-            Logger.log("Address ID inserted: empty/null");
-            IO.println(addressDocumentTypeStr + " reference number cannot be empty.");
+        while (!validRefNumber) {
             IO.print(addressDocumentTypeStr + " Reference Number:\t");
-            addressId = reader.nextLine();
+            addressId = reader.nextLine().trim();
+            Logger.log("Address ID inserted: " + addressId);
+
+            if (addressId.isEmpty()) {
+                Logger.log("Address ID inserted: empty/null");
+                IO.println("Error: " + addressDocumentTypeStr + " reference number cannot be empty.");
+            } else if (addressId.length() < 3) {
+                IO.println("Error: Reference number must be at least 3 characters long.");
+            } else if (addressId.length() > 30) {
+                IO.println("Error: Reference number cannot exceed 30 characters.");
+            } else {
+                validRefNumber = true;
+            }
         }
 
         // Confirm full details for sign up
@@ -329,26 +360,25 @@ public class CLIMenu {
         IO.println("Photo ID: " + photoIdNumber);
         IO.println("Address Document Type: " + addressDocumentTypeStr);
         IO.println("Address Reference Number: " + addressId);
-        IO.println("\n1. Confirm and Create Customer");
-        IO.println("2. Edit Details");
-        IO.println("3. Help");
-        IO.println("0. Cancel Operation");
-        IO.print("Select an option:\t");
 
-        byte confirmOption = 0;
         boolean validConfirm = false;
 
         while (!validConfirm) {
-            try {
-                String option = reader.nextLine();
+            IO.println("\n1. Confirm and Create Customer");
+            IO.println("2. Edit Details");
+            IO.println("3. Help");
+            IO.println("0. Cancel Operation");
+            IO.print("Select an option:\t");
 
-                if (option.trim().isEmpty()) {
+            try {
+                String option = reader.nextLine().trim();
+                if (option.isEmpty()) {
                     Logger.log("Option selected: empty/null");
                     IO.print("Please enter an option (0-3)");
                     continue;
                 }
 
-                confirmOption = Byte.parseByte(option);
+                byte confirmOption = Byte.parseByte(option);
 
                 if (confirmOption == 0) {
                     Logger.log("0. Cancel Operation");
@@ -358,6 +388,7 @@ public class CLIMenu {
                 } else if (confirmOption == 3) {
                     Logger.log("3. Help");
                     help("customer confirmation");
+                    // Display confirmation again
                     IO.println("\n=== Confirm Customer Details ===");
                     IO.println("Name: " + name);
                     IO.println("National ID: " + nationalID);
@@ -370,7 +401,13 @@ public class CLIMenu {
                     IO.println("0. Cancel Operation");
                     IO.print("Select an option:\t");
                     continue;
-                } else if (confirmOption >= 1 && confirmOption <= 2) {
+                } else if (confirmOption == 2) {
+                    Logger.log("1. Edit Details");
+                    IO.println("\nEditing customer details...\n");
+                    createCustomer();
+                    return;
+                } else if (confirmOption == 1) {
+                    Logger.log("1. Confirm and Create Customer");
                     validConfirm = true;
                 } else {
                     Logger.log("Invalid option selected");
@@ -382,18 +419,24 @@ public class CLIMenu {
             }
         }
 
-        switch (confirmOption) {
-            case 1: // Confirm and insert customer into database
-                try {
-                    Logger.log("1. Confirm and Create Customer");
+        // Create customer
+        try {
+            Logger.log("1. Confirm and Create Customer");
 
-                    DataHandling.insertCustomer(name, nationalID, photoIdNumber, addressId);
-                    Logger.log("Data inserted into database: Name: " + name + ", National ID: " + nationalID + ", Photo ID: " + photoIdNumber + ", Adress: " + addressId);
+            DataHandling.insertCustomer(name, nationalID, photoIdNumber, addressId);
+            Logger.log("Data inserted into database: Name: " + name + ", National ID: " + nationalID + ", Photo ID: " + photoIdNumber + ", Adress: " + addressId);
 
-                    IO.println("\nCustomer created successfully!");
-                    IO.println("Customer details have been saved to the database.\n");
+            IO.println("\nCustomer created successfully!");
+            IO.println("Customer details have been saved to the database.\n");
 
+            // Find and set new customer as current customer
+            Customer newCustomer = CustomerAuthentication.findCustomerByNationalId(nationalID);
 
+            if (newCustomer != null) {
+                currentCustomer = newCustomer;
+                boolean validAccountChoice = false;
+
+                while (!validAccountChoice) {
                     // Open an account immediately or customer portal
                     IO.println("Would you like to open an account for this customer?");
                     IO.println("""
@@ -404,133 +447,84 @@ public class CLIMenu {
                             """);
                     IO.print("Select an option:\t");
 
-                    byte accountChoice = 0;
-                    boolean validAccountChoice = false;
-
-                    while (!validAccountChoice) {
-                        try {
-                            String option = reader.nextLine();
-
-                            if (option.trim().isEmpty()) {
-                                Logger.log("Option selected: empty/null");
-                                IO.print("Please enter an option (0-3):\t");
-                                continue;
-                            }
-
-                            accountChoice = Byte.parseByte(option);
-
-                            if (accountChoice == 0) {
-                                Logger.log("0. Cancel and exit");
-                                IO.println("\nReturning to main menu.");
-                                return;
-                            } else if (accountChoice == 3) {
-                                Logger.log("3. Help");
-                                help("open account after signup");
-                                IO.println("\nWould you like to open an account for this customer?");
-                                IO.println("""
-                                        1. Yes, open an account now
-                                        2. No, return to customer portal
-                                        3. Help
-                                        0. Cancel and exit
-                                        """);
-                                IO.print("Select an option:\t");
-                            } else if (accountChoice >= 1 && accountChoice <= 2) {
-                                validAccountChoice = true;
-                            } else {
-                                Logger.log("Invalid option selected");
-                                IO.print("Please enter a number between 0 and 3: ");
-                            }
-                        } catch (NumberFormatException e) {
-                            Logger.log("Error message: " + e.getMessage());
-                            IO.print("Please enter a valid number (0-3): ");
+                    try {
+                        String option = reader.nextLine().trim();
+                        if (option.trim().isEmpty()) {
+                            Logger.log("Option selected: empty/null");
+                            IO.print("Please enter an option (0-3):\t");
+                            continue;
                         }
-                    }
+                        byte accountChoice = Byte.parseByte(option);
 
-                    if (accountChoice == 1) {
-                        Logger.log("1. Yes, open an account now");
-                        IO.println("\nOpening account for new customer...");
-
-                        Customer newCustomer = CustomerAuthentication.findCustomerByNationalId(nationalID);
-
-                        if (newCustomer != null) {
-                            Logger.log("1. Yes, open an account now");
-                            currentCustomer = newCustomer;
+                        if (accountChoice == 0) {
+                            Logger.log("0. Cancel and exit");
+                            IO.println("\nReturning to main menu.");
+                            return;
+                        } else if (accountChoice == 3) {
+                            Logger.log("3. Help");
+                            help("open account after signup");
+                            continue;
+                        } else if (accountChoice == 1) {
+                            Logger.log("1. Yes open an account now");
+                            IO.println("\nOpening account for new customer...");
                             openAccount();
-                        } else {
-                            Logger.log("Error, could not retrieve the newly created customer.");
-                            IO.println("Error: Could not retrieve the newly created customer.");
-                            return;
-                        }
-
-                    } else {
-                        // Find the new customer and go to their portal
-                        Customer customer = CustomerAuthentication.findCustomerByNationalId(nationalID);
-
-                        if (customer != null) {
+                            validAccountChoice = true;
+                        } else if (accountChoice == 2) {
                             Logger.log("2. No, return to customer portal");
-                            currentCustomer = customer;
                             customerPortal();
+                            validAccountChoice = true;
                         } else {
-                            Logger.log("Error, returning to main menu");
-                            IO.println("Error: Could not retrieve created customer");
-                            return;
+                            Logger.log("Invalid option selected");
+                            IO.print("Please enter a number between 0 and 3: ");
                         }
-                    }
-                    return;
-                } catch (Exception e) {
-                    Logger.log("Error message: " + e.getMessage());
-                    IO.println("\n Error creating customer: " + e.getMessage());
-                    IO.println("Please try again or contact support.\n");
-
-                    IO.println("""
-                            1. Try creating customer again
-                            0. Return to main menu
-                            """);
-
-                    byte errorChoice = 0;
-                    boolean validErrorOption = false;
-
-                    while (!validErrorOption) {
-                        try {
-                            String option = reader.nextLine();
-
-                            if (option.trim().isEmpty()) {
-                                Logger.log("Invalid option selected");
-                                IO.print("Please enter an option (0-3): ");
-                                continue;
-                            }
-
-                            errorChoice = Byte.parseByte(option);
-                            Logger.log("Error choice: " + errorChoice);
-
-                            if (errorChoice == 0) {
-                                Logger.log("0. Return to main menu");
-                                IO.println("\nReturning to Main Menu");
-                                return;
-                            } else if (errorChoice == 1) {
-                                validErrorOption = true;
-                            } else {
-                                Logger.log("Invalid option selected");
-                                IO.println("Please enter a number between 0 and 1");
-                            }
-                        } catch (NumberFormatException ex) {
-                            Logger.log("Error message: " + ex.getMessage());
-                            IO.println("Please enter a valid number (0-1): ");
-                        }
-                    }
-
-                    if (errorChoice == 1) {
-                        Logger.log("1. Try creating customer again");
-                        IO.println("\nCreating new customer...");
-                        createCustomer();
+                    } catch (NumberFormatException e) {
+                        Logger.log("Error message: " + e.getMessage());
+                        IO.print("Please enter a valid number (0-3): ");
                     }
                 }
-                break;
-            case 2: // Edit details by starting over
-                Logger.log("2. Edit Details");
-                IO.println("\nEditing customer details...\n");
-                createCustomer();
-                break;
+            } else {
+                IO.println("Error: Could not retrieve the newly created customer.");
+            }
+        } catch (Exception e) {
+            Logger.log("Error message: " + e.getMessage());
+            IO.println("\n Error creating customer: " + e.getMessage());
+            boolean validErrorOption = false;
+
+            while (!validErrorOption) {
+                IO.println("Please try again or contact support.\n");
+                IO.println("""
+                        1. Try creating customer again
+                        0. Return to main menu
+                        """);
+                IO.print("Select an option:\t");
+
+                try {
+                    String option = reader.nextLine().trim();
+                    if (option.isEmpty()) {
+                        Logger.log("Invalid option selected");
+                        IO.print("Please enter an option (0-3): ");
+                        continue;
+                    }
+                    byte errorChoice = Byte.parseByte(option);
+                    Logger.log("Error choice: " + errorChoice);
+
+                    if (errorChoice == 0) {
+                        Logger.log("0. Return to main menu");
+                        IO.println("\nReturning to Main Menu");
+                        return;
+                    } else if (errorChoice == 1) {
+                        IO.println("\nCreating new customer...");
+                        createCustomer();
+                        validErrorOption = true;
+                    } else {
+                        Logger.log("Invalid option selected");
+                        IO.println("Please enter a number between 0 and 1");
+                    }
+                } catch (NumberFormatException ex) {
+                    Logger.log("Error message: " + ex.getMessage());
+                    IO.println("Please enter a valid number (0-1): ");
+                }
+            }
         }
     }
 
@@ -690,12 +684,12 @@ public class CLIMenu {
                         This process verifies the customer's address through documentation
                         
                         Acceptable documents:
-                        1. Utility Bill - Recent bill for gas, electricty or water services 
+                        1. Utility Bill - Recent bill for gas, electricty or water services
                            (must be less than 3 months old and show customer's name and address)
                         2. Council Tax Letter - Official council tax statement or bill
                            (must be for the current tax year and show customer's name and address)
-                        3. Help - Display this help information  
-                        0. Cancel Operation - Return to previous menu     
+                        3. Help - Display this help information
+                        0. Cancel Operation - Return to previous menu
                         """);
                 break;
             case "customer confirmation":

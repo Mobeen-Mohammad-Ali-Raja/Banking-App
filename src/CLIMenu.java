@@ -691,6 +691,56 @@ public class CLIMenu {
                         0. Cancel and exit - Return to main menu
                         """);
                 break;
+            case "account personal":
+                Logger.log("Personal Account Help Screen");
+                IO.println("""
+                        --- Personal Account Help ---
+                        Standard banking account for daily use.
+                        
+                        Rules & Fees:
+                        - Minimum Balance: £1.00 (Account cannot be empty).
+                        - Overdraft: Up to £500.00 available.
+                        - Fees: None.
+                        
+                        Operations:
+                        1. Deposit: Add funds.
+                        2. Withdraw: Remove funds (subject to balance/overdraft).
+                        """);
+                break;
+
+            case "account isa":
+                Logger.log("ISA Account Help Screen");
+                IO.println("""
+                        --- ISA Account Help ---
+                        Tax-free savings account with interest benefits.
+                        
+                        Rules & Fees:
+                        - Limit: Only ONE ISA allowed per customer.
+                        - Interest: 2.75% Annual Interest Rate.
+                        - Overdraft: Not available for ISAs.
+                        
+                        Operations:
+                        4. Apply Annual Interest: Calculates 2.75% of current balance 
+                           and adds it to the account (Can only be done once per day).
+                        """);
+                break;
+
+            case "account business":
+                Logger.log("Business Account Help Screen");
+                IO.println("""
+                        --- Business Account Help ---
+                        Account for registered Sole Traders, Ltd Companies, and Partnerships.
+                        
+                        Rules & Fees:
+                        - Annual Fee: £120.00 (Deducted automatically).
+                        - Overdraft: Up to £1000.00 available.
+                        - Cheque Book: Available upon request.
+                        
+                        Operations:
+                        4. Issue Cheque Book: Registers a cheque book for this account.
+                           (System prevents duplicate issuance).
+                        """);
+                break;
             default:
                 Logger.log("General Help Screen");
                 IO.println("""
@@ -800,8 +850,12 @@ public class CLIMenu {
             return;
         }
 
-        // Gets the account type, so we know which menu to show
+        // Gets the account type
         String accountType = Transaction.getAccountType(accountId);
+
+        boolean isBusiness = accountType.toUpperCase().contains("BUSINESS");
+        boolean isISA = accountType.equalsIgnoreCase("ISA");
+
         boolean inAccount = true;
 
         while (inAccount) {
@@ -812,19 +866,27 @@ public class CLIMenu {
             IO.println("2. Withdraw");
             IO.println("3. View Transactions");
 
-            if (accountType.equalsIgnoreCase("ISA")) {
+            // Show specific options AND Help
+            if (isISA) {
                 IO.println("4. Apply Annual Interest");
-            } else if (accountType.equalsIgnoreCase("Business")) {
+                IO.println("5. Help");
+            } else if (isBusiness) {
                 IO.println("4. Issue Cheque Book");
+                IO.println("5. Help");
             } else {
-                IO.println("4. Help"); // Personal accounts just see Help here
+                IO.println("4. Help");
             }
 
             IO.println("0. Back to Accounts List\n");
             IO.print("Select an option: ");
 
-            byte choice = reader.nextByte();
-            reader.nextLine();
+            byte choice = 0;
+            try {
+                choice = reader.nextByte();
+                reader.nextLine();
+            } catch (Exception e) {
+                reader.nextLine();
+            }
 
             switch (choice) {
                 case 1:
@@ -840,13 +902,27 @@ public class CLIMenu {
                     viewTransactions(accountId);
                     break;
                 case 4:
-                    // Handle the dynamic options
-                    if (accountType.equalsIgnoreCase("ISA")) {
+                    // Action vs Help depending on type
+                    if (isISA) {
                         DataHandling.applyISAInterest(accountId);
-                    } else if (accountType.equalsIgnoreCase("Business")) {
+                    } else if (isBusiness) {
                         DataHandling.issueChequeBook(accountId);
                     } else {
-                        help("select accounts");
+                        // Personal Account hits Help here
+                        Logger.log("4. Help (Personal)");
+                        help("account personal");
+                    }
+                    break;
+                case 5:
+                    // FIX 3: Handle the new option 5 for ISA/Business
+                    if (isISA) {
+                        Logger.log("5. Help (ISA)");
+                        help("account isa");
+                    } else if (isBusiness) {
+                        Logger.log("5. Help (Business)");
+                        help("account business");
+                    } else {
+                        IO.println("Invalid option.");
                     }
                     break;
                 case 0:
@@ -1004,7 +1080,7 @@ public class CLIMenu {
     private static void createAccount(String accountType) {
         IO.println("\n=== Create " + accountType.toUpperCase() + " Account ===");
 
-        // 1. ISA RULE: Only one per customer
+        // Only ISA one per customer
         if (accountType.equalsIgnoreCase("ISA")) {
             if (DataHandling.customerHasISA(currentCustomer.getCustomerId())) {
                 Logger.log("Error: Customer has existing ISA Account");
@@ -1015,7 +1091,18 @@ public class CLIMenu {
             }
         }
 
-        // 2. BUSINESS RULE: Validate Business Type (Now with Loop)
+        // Allow only one business account per customer
+        if (accountType.equalsIgnoreCase("Business")) {
+            if (DataHandling.customerHasBusiness(currentCustomer.getCustomerId())) {
+                Logger.log("Error: Customer has existing Business Account");
+                IO.println("Error: Customer already has a Business Account. Limit is one per customer.");
+                IO.print("\nPress Enter to return...");
+                reader.nextLine();
+                return;
+            }
+        }
+
+        // Validate Business Type (Now with Loop)
         if (accountType.equalsIgnoreCase("Business")) {
             boolean validBusinessType = false;
 
@@ -1042,12 +1129,15 @@ public class CLIMenu {
                 }
 
                 // Check eligibility
-                if (typeChoice == 1 || typeChoice == 2) {
-                    validBusinessType = true; // Breaks the loop, moves to next step
+                if (typeChoice == 1) {
+                    accountType = "Business (Sole Trader)";
+                    validBusinessType = true;
+                } else if (typeChoice == 2) {
+                    accountType = "Business (Ltd)";
+                    validBusinessType = true;
                 } else {
                     Logger.log("Error: business type is not eligible for an account");
-                IO.println("Error: Invalid selection. Eligible types: Sole Trader and Ltd.");
-                    // Loop continues automatically, asking again
+                    IO.println("Error: Invalid selection. Eligible types: Sole Trader and Ltd.");
                 }
             }
         }

@@ -162,10 +162,21 @@ public class DataHandling {
     }
 
     public static void applyISAInterest(int accountId) {
-        // OOP FIX: Get the rate from the ISAAccount class, not hardcoded here.
-        double interestRate = ISAAccount.INTEREST_RATE;
+        // CHECK: Has it been applied this YEAR?
+        if (hasAppliedISAInterest(accountId)) {
+            IO.println("Error: Annual interest has already been applied to this account this year.");
+            return;
+        }
 
+        double interestRate = ISAAccount.INTEREST_RATE;
         double currentBalance = Transaction.getAccountBalance(accountId);
+
+        // Don't get interest on empty accounts
+        if (currentBalance <= 0) {
+            IO.println("Error: Cannot apply interest to an account with zero or negative balance.");
+            return;
+        }
+
         double interestAmount = currentBalance * interestRate;
         double newBalance = currentBalance + interestAmount;
 
@@ -177,6 +188,43 @@ public class DataHandling {
         IO.println("Annual Interest Rate of " + (interestRate * 100) + "% applied.");
         IO.println("Interest Calculated: £" + String.format("%.2f", interestAmount));
         IO.println("New Balance: £" + String.format("%.2f", newBalance));
+    }
+
+    // Check if ISA yearly interest
+    public static boolean hasAppliedISAInterest(int accountId) {
+        // SQLite query to find Interest transactions for this account created THIS YEAR (YYYY)
+        // This prevents applying interest multiple times in 2026, for example.
+        String sql = "SELECT COUNT(*) FROM transactions WHERE account_id = " + accountId +
+                " AND transaction_type = 'Interest' AND strftime('%Y', created_at) = strftime('%Y', 'now')";
+
+        try (Connection conn = Main.getConnection();
+             Statement stmt = conn.createStatement();
+             ResultSet rs = stmt.executeQuery(sql)) {
+
+            if (rs.next()) {
+                return rs.getInt(1) > 0; // Returns true if we found a record for this year
+            }
+        } catch (SQLException e) {
+            IO.println("Error checking interest status: " + e.getMessage());
+        }
+        return false;
+    }
+
+    // Allowing only one business account per customer
+    public static boolean customerHasBusiness(String customerId) {
+        String sql = "SELECT COUNT(*) FROM accounts WHERE customer_id = '" + customerId + "' AND account_type LIKE '%Business%'";
+
+        try (Connection conn = Main.getConnection();
+             Statement stmt = conn.createStatement();
+             ResultSet rs = stmt.executeQuery(sql)) {
+
+            if (rs.next()) {
+                return rs.getInt(1) > 0;
+            }
+        } catch (SQLException e) {
+            IO.println("Error checking Business account status: " + e.getMessage());
+        }
+        return false;
     }
 
     public static void issueChequeBook(int accountId) {
@@ -206,7 +254,6 @@ public class DataHandling {
         Main.runDb(updateSql);
         IO.println("Success: Cheque book issued.");
     }
-
 
     static void main() {
 

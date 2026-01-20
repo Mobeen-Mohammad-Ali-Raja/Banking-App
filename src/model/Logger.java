@@ -1,5 +1,6 @@
 package model;
 
+import java.io.File;
 import java.io.FileWriter;
 import java.io.IOException;
 import java.time.LocalDateTime;
@@ -44,7 +45,18 @@ public class Logger {
 
     public static void deleteFile(){
 
+        File file = new File(FILE_NAME);
+
+        if(file.delete()){
+            Logger.log("File deleted successfully");
+            System.out.println("File deleted successfully");
+        } else {
+            Logger.log("File could not be deleted");
+            System.out.println("File could not be deleted");
+        }
     }
+
+    public static void readFile(){}
 }
 
 

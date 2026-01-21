@@ -705,6 +705,10 @@ public class CLIMenu {
                         Operations:
                         1. Deposit: Add funds.
                         2. Withdraw: Remove funds (subject to balance/overdraft).
+                        3. View Transactions: See history.
+                        4. Set Up Direct Debit: Schedule a payment to a recipient.
+                        5. Set Up Standing Order: Schedule regular payments (e.g. Monthly).
+                        6. View Scheduled Payments: List all active Direct Debits & Standing Orders.
                         """);
                 break;
 
@@ -853,9 +857,9 @@ public class CLIMenu {
         String accountType = Transaction.getAccountType(accountId);
         boolean isBusiness = accountType.toUpperCase().contains("BUSINESS");
         boolean isISA = accountType.equalsIgnoreCase("ISA");
+        boolean isPersonal = accountType.equalsIgnoreCase("PERSONAL"); // Explicit check
         boolean inAccount = true;
 
-        // Log entry
         Logger.log("User entered Account Menu for Account ID: " + accountId + " (" + accountType + ")");
 
         while (inAccount) {
@@ -872,6 +876,12 @@ public class CLIMenu {
             } else if (isBusiness) {
                 IO.println("4. Issue Cheque Book");
                 IO.println("5. Help");
+            } else if (isPersonal) {
+                // Options to set up direct debit, standing order and view scheduled payments
+                IO.println("4. Set Up Direct Debit");
+                IO.println("5. Set Up Standing Order");
+                IO.println("6. View Scheduled Payments");
+                IO.println("7. Help");
             } else {
                 IO.println("4. Help");
             }
@@ -900,29 +910,72 @@ public class CLIMenu {
                     Logger.log("User Selected: 3. View Transactions");
                     viewTransactions(accountId);
                     break;
+
                 case 4:
                     if (isISA) {
-                        Logger.log("User Selected: 4. Apply ISA Interest"); // NEW
+                        Logger.log("User Selected: Apply ISA Interest");
                         DataHandling.applyISAInterest(accountId);
                     } else if (isBusiness) {
-                        Logger.log("User Selected: 4. Issue Cheque Book"); // NEW
+                        Logger.log("User Selected: Issue Cheque Book");
                         DataHandling.issueChequeBook(accountId);
+                    } else if (isPersonal) {
+                        // Direct Debit
+                        Logger.log("User Selected: Setup Direct Debit");
+                        IO.print("Enter Recipient Name: ");
+                        String recipient = reader.nextLine();
+                        IO.print("Enter Amount: £");
+                        try {
+                            double amount = reader.nextDouble();
+                            reader.nextLine();
+                            DataHandling.setupDirectDebit(accountId, recipient, amount);
+                        } catch(Exception e) { reader.nextLine(); IO.println("Invalid amount."); }
                     } else {
-                        Logger.log("User Selected: 4. Help (Personal)");
                         help("account personal");
                     }
                     break;
+
                 case 5:
                     if (isISA) {
-                        Logger.log("User Selected: 5. Help (ISA)");
                         help("account isa");
                     } else if (isBusiness) {
-                        Logger.log("User Selected: 5. Help (Business)");
                         help("account business");
+                    } else if (isPersonal) {
+                        // NEW: Standing Order
+                        Logger.log("User Selected: Setup Standing Order");
+                        IO.print("Enter Recipient Name: ");
+                        String recipient = reader.nextLine();
+                        IO.print("Enter Amount: £");
+                        try {
+                            double amount = reader.nextDouble();
+                            reader.nextLine();
+                            IO.print("Enter Frequency (e.g. Monthly): ");
+                            String freq = reader.nextLine();
+                            DataHandling.setupStandingOrder(accountId, recipient, amount, freq);
+                        } catch(Exception e) { reader.nextLine(); IO.println("Invalid amount."); }
                     } else {
                         IO.println("Invalid option.");
                     }
                     break;
+
+                // View personal scheduled payments
+                case 6:
+                    if (isPersonal) {
+                        Logger.log("User Selected: View Scheduled Payments");
+                        DataHandling.viewScheduledPayments(accountId);
+                    } else {
+                        IO.println("Invalid option.");
+                    }
+                    break;
+
+                // Personal account
+                case 7:
+                    if (isPersonal) {
+                        help("account personal");
+                    } else {
+                        IO.println("Invalid option.");
+                    }
+                    break;
+
                 case 0:
                     Logger.log("User Selected: 0. Back");
                     inAccount = false;

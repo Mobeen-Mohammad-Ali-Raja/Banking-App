@@ -152,6 +152,60 @@ public class DataHandling {
         }
     }
 
+        public static void setupDirectDebit(int accountId, String recipient, double amount) {
+        String sql = "INSERT INTO direct_debits (account_id, recipient_name, amount) VALUES (" +
+                accountId + ", '" + recipient + "', " + amount + ")";
+        Main.runDb(sql);
+        IO.println("Success: Direct Debit set up for " + recipient + " (£" + amount + ")");
+        Logger.log("DIRECT DEBIT SETUP: Account " + accountId + " | Recipient: " + recipient + " | Amount: " + amount);
+    }
+
+    public static void setupStandingOrder(int accountId, String recipient, double amount, String frequency) {
+        String sql = "INSERT INTO standing_orders (account_id, recipient_name, amount, frequency) VALUES (" +
+                accountId + ", '" + recipient + "', " + amount + ", '" + frequency + "')";
+        Main.runDb(sql);
+        IO.println("Success: Standing Order set up for " + recipient + " (£" + amount + " " + frequency + ")");
+        Logger.log("STANDING ORDER SETUP: Account " + accountId + " | Recipient: " + recipient + " | Amount: " + amount + " | Freq: " + frequency);
+    }
+
+    public static void viewScheduledPayments(int accountId) {
+        IO.println("\n=== Scheduled Payments ===");
+
+        // Direct Debits
+        IO.println("--- Direct Debits ---");
+        try (Connection conn = Main.getConnection();
+             Statement stmt = conn.createStatement();
+             ResultSet rs = stmt.executeQuery("SELECT * FROM direct_debits WHERE account_id = " + accountId)) {
+
+            boolean found = false;
+            while (rs.next()) {
+                found = true;
+                IO.println("- Recipient: " + rs.getString("recipient_name") + " | Amount: £" + rs.getDouble("amount"));
+            }
+            if (!found) IO.println("No Direct Debits set up.");
+
+        } catch (SQLException e) {
+            IO.println("Error loading Direct Debits: " + e.getMessage());
+        }
+
+        // Standing Orders
+        IO.println("\n--- Standing Orders ---");
+        try (Connection conn = Main.getConnection();
+             Statement stmt = conn.createStatement();
+             ResultSet rs = stmt.executeQuery("SELECT * FROM standing_orders WHERE account_id = " + accountId)) {
+
+            boolean found = false;
+            while (rs.next()) {
+                found = true;
+                IO.println("- Recipient: " + rs.getString("recipient_name") + " | Amount: £" + rs.getDouble("amount") + " | Freq: " + rs.getString("frequency"));
+            }
+            if (!found) IO.println("No Standing Orders set up.");
+
+        } catch (SQLException e) {
+            IO.println("Error loading Standing Orders: " + e.getMessage());
+        }
+    }
+
     public static boolean customerHasISA(String customerId) {
         String sql = "SELECT COUNT(*) FROM accounts WHERE customer_id = '" + customerId + "' AND account_type = 'ISA'";
 
@@ -255,7 +309,7 @@ public class DataHandling {
             return;
         }
 
-        // Update DB. Set the flag to true
+        // Updates DB
         String updateSql = "UPDATE accounts SET cheque_book_issued = 1 WHERE account_id = " + accountId;
         Main.runDb(updateSql);
         IO.println("Success: Cheque book issued.");

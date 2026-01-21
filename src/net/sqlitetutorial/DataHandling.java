@@ -136,7 +136,7 @@ public class DataHandling {
 
     // View all tables
     public static void viewAllTables() {
-        String[] tables = {"customers", "accounts", "transactions"};
+        String[] tables = {"customers", "accounts", "transactions","direct_debits","standing_orders"};
         for (String table : tables) {
             System.out.println("\n=== " + table.toUpperCase() + " ===");
             Main.viewTable(table);

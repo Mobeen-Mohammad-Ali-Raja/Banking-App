@@ -135,7 +135,6 @@ public class DataHandling {
     }
 
 
-
     private static double getAvailableFunds(double currentBalance, String accountType, boolean hasOverdraftFacility) {
         double availableFunds = currentBalance;
         double overdraftLimit = 0.0;
@@ -152,14 +151,14 @@ public class DataHandling {
 
     // View all tables
     public static void viewAllTables() {
-        String[] tables = {"customers", "accounts", "transactions","direct_debits","standing_orders"};
+        String[] tables = {"customers", "accounts", "transactions", "direct_debits", "standing_orders"};
         for (String table : tables) {
             System.out.println("\n=== " + table.toUpperCase() + " ===");
             Main.viewTable(table);
         }
     }
 
-        public static void setupDirectDebit(int accountId, String recipient, double amount) {
+    public static void setupDirectDebit(int accountId, String recipient, double amount) {
         String sql = "INSERT INTO direct_debits (account_id, recipient_name, amount) VALUES (" +
                 accountId + ", '" + recipient + "', " + amount + ")";
         Main.runDb(sql);
@@ -225,6 +224,7 @@ public class DataHandling {
             }
         } catch (SQLException e) {
             IO.println("Error checking ISA status: " + e.getMessage());
+            Logger.log("ERROR: Checking ISA status failed for Account " + customerId + " | Error: " + e.getMessage()); // NEW
         }
         return false;
     }
@@ -242,6 +242,7 @@ public class DataHandling {
         // Doesnt give free money to empty accounts
         if (currentBalance <= 0) {
             IO.println("Error: Cannot apply interest to an account with zero or negative balance.");
+            Logger.log("ERROR: Cannot apply interest to an account with zero or negative balance."); // NEW
             return;
         }
 
@@ -276,6 +277,7 @@ public class DataHandling {
             }
         } catch (SQLException e) {
             IO.println("Error checking interest status: " + e.getMessage());
+            Logger.log("ERROR: Checking interest status failed for Account " + accountId + " | Error: " + e.getMessage());
         }
         return false;
     }
@@ -293,6 +295,7 @@ public class DataHandling {
             }
         } catch (SQLException e) {
             IO.println("Error checking Business account status: " + e.getMessage());
+            Logger.log("ERROR: Checking Business account status failed for Customer " + customerId + " | Error: " + e.getMessage());
         }
         return false;
     }

@@ -1,5 +1,6 @@
 package net.sqlitetutorial;
 
+import model.Logger;
 import model.Transaction;
 import net.sqlitetutorial.utils.AccountNumberGenerator;
 import net.sqlitetutorial.utils.SortCodeManager;
@@ -41,6 +42,7 @@ public class DataHandling {
         String sql = "INSERT INTO customers (customer_id, name, national_id, photo_id, address_id, created_at) " + "VALUES ('" + customerId + "', '" + name + "', '" + niId + "', '" + photoId + "', '" + addressId + "', datetime('now'))";
         Main.runDb(sql);
         System.out.println("Customer added with ID: " + customerId);
+        Logger.log("Customer added with ID: " + customerId);
     }
 
     // Create a new account
@@ -57,6 +59,7 @@ public class DataHandling {
             if (openingBalance >= fee) {
                 openingBalance -= fee;
                 IO.println("Annual fee of £120.00 applied.");
+                Logger.log("Annual fee of £120.00 applied.");
             } else {
                 IO.println("Warning: Opening balance insufficient for annual fee.");
                 openingBalance -= fee; // Balance becomes negative
@@ -66,12 +69,14 @@ public class DataHandling {
         String sql = "INSERT INTO accounts (customer_id, account_type, account_number, sort_code, balance, opening_balance, has_overdraft_facility, created_at) " + "VALUES ('" + customerId + "', '" + accountType + "', '" + accountNumber + "', '" + sortCode + "', " + openingBalance + ", " + openingBalance + ", " + hasOverdraftFacility + ", datetime('now'))";
         Main.runDb(sql);
         System.out.println("Account created: " + accountNumber + " (Sort Code: " + sortCode + ")");
+        Logger.log("Account created: " + accountNumber + " (Sort Code: " + sortCode + ")");
     }
 
     // Deposit money
     public static void deposit(int accountId, double amount) {
         if (amount <= 0) {
             System.out.println("Error: Deposit amount must be positive");
+            Logger.log("Error: Deposit amount must be positive");
             return;
         }
 
@@ -83,12 +88,14 @@ public class DataHandling {
 
         Transaction.recordTransaction(accountId, "Deposit", amount, newBalance, "Deposit to account");
         System.out.println("Deposited: £" + amount + " | New Balance: £" + newBalance);
+        Logger.log("Deposited: £" + amount + " | New Balance: £" + newBalance);
     }
 
     // Withdraw money
     public static void withdraw(int accountId, double amount) {
         if (amount <= 0) {
             System.out.println("Error: Withdrawal amount must be positive");
+            Logger.log("Error: Withdrawal amount must be positive");
             return;
         }
 
@@ -100,6 +107,8 @@ public class DataHandling {
 
         if (availableFunds < amount) {
             System.out.println("Error: Insufficient funds. Current balance: £" + currentBalance +
+                    " | Available with overdraft: £" + availableFunds);
+            Logger.log("Error: Insufficient funds. Current balance: £" + currentBalance +
                     " | Available with overdraft: £" + availableFunds);
             return;
         }
@@ -116,6 +125,7 @@ public class DataHandling {
 
         Transaction.recordTransaction(accountId, "Withdrawal", amount, newBalance, description);
         System.out.println("Withdrawn: £" + amount + " | New Balance: £" + newBalance);
+        Logger.log("Withdrawn: £" + amount + " | New Balance: £" + newBalance);
     }
 
 
@@ -173,8 +183,12 @@ public class DataHandling {
         Transaction.recordTransaction(accountId, "Interest", interestAmount, newBalance, "Annual ISA Interest Applied");
 
         IO.println("Annual Interest Rate of " + (interestRate * 100) + "% applied.");
+        Logger.log("Annual Interest Rate of " + interestRate + " % applied.");
         IO.println("Interest Calculated: £" + String.format("%.2f", interestAmount));
+
+
         IO.println("New Balance: £" + String.format("%.2f", newBalance));
+        Logger.log("New Balance: £" + String.format("%.2f", newBalance));
     }
 
     public static void issueChequeBook(int accountId) {
@@ -203,6 +217,7 @@ public class DataHandling {
         String updateSql = "UPDATE accounts SET cheque_book_issued = 1 WHERE account_id = " + accountId;
         Main.runDb(updateSql);
         IO.println("Success: Cheque book issued.");
+        Logger.log("Success: Cheque book issued.");
     }
 
 

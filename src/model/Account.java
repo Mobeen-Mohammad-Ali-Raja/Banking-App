@@ -4,22 +4,32 @@ import net.sqlitetutorial.utils.AccountNumberGenerator;
 
 public abstract class Account {
 
-    // "Protected" allows the child classes (ISA, Personal) to access these fields
     protected String accountNumber;
     protected String sortCode;
     protected double balance;
-    protected String customerId; // The owner of this account
+    protected String customerId;
 
-    /**
-     * Constructor for the base Account.
-     */
     public Account(String customerId, String sortCode, double openingBalance) {
         this.customerId = customerId;
         this.sortCode = sortCode;
         this.balance = openingBalance;
-
-        // Automatically assign sort code and account number
         this.accountNumber = AccountNumberGenerator.generateAccountNumber();
+    }
+
+        public static String getSortCodeForType(String accountType) {
+        if (accountType.equalsIgnoreCase("Personal")) {
+            return PersonalAccount.SORT_CODE;
+        }
+        else if (accountType.equalsIgnoreCase("ISA")) {
+            return ISAAccount.SORT_CODE;
+        }
+        // Logic: Accept "Business", "Business (Ltd)", "Business (Sole Trader)" etc.
+        else if (accountType.toUpperCase().contains("BUSINESS")) {
+            return BusinessAccount.SORT_CODE;
+        }
+        else {
+            throw new IllegalArgumentException("Unknown Account Type: " + accountType);
+        }
     }
 
     // Banking Operations
@@ -31,10 +41,6 @@ public abstract class Account {
         }
     }
 
-    /**
-     * Withdraws money. This method can be overridden by children
-     * (e.g., if they have overdrafts).
-     */
     public void withdraw(double amount) {
         if (amount > 0 && this.balance >= amount) {
             this.balance -= amount;
@@ -43,24 +49,12 @@ public abstract class Account {
         }
     }
 
-    public double getBalance() {
-        return this.balance;
-    }
+    public double getBalance() { return this.balance; }
+    public String getAccountNumber() { return this.accountNumber; }
+    public String getSortCode() { return this.sortCode; }
+    public String getCustomerId() { return this.customerId; }
 
-    public String getAccountNumber() {
-        return this.accountNumber;
-    }
-
-    public String getSortCode() {
-        return this.sortCode;
-    }
-
-    public String getCustomerId() {
-        return this.customerId;
-    }
-
-
-    //     * Lists all accounts belonging to a customer from the database
+    // Lists all accounts belonging to a customer from the database
     public static void listCustomerAccounts(String customerId) {
         String sql = "SELECT account_id, account_type, account_number, sort_code, balance " +
                 "FROM accounts WHERE customer_id = '" + customerId + "'";
@@ -69,8 +63,8 @@ public abstract class Account {
              java.sql.Statement stmt = conn.createStatement();
              java.sql.ResultSet rs = stmt.executeQuery(sql)) {
 
-            System.out.println("No | Type       | Account Number | Sort Code | Balance");
-            System.out.println("-".repeat(60));
+            IO.println("No | Type                 | Account Number | Sort Code | Balance");
+            IO.println("-".repeat(70));
 
             int count = 1;
             while (rs.next()) {
@@ -80,27 +74,27 @@ public abstract class Account {
                 String sortCode = rs.getString("sort_code");
                 double balance = rs.getDouble("balance");
 
-                System.out.printf("%-3d | %-10s | %-14s | %-9s | £%.2f%n",
+                System.out.printf("%-3d | %-20s | %-14s | %-9s | £%.2f%n",
                         count, accountType, accountNumber, sortCode, balance);
                 count++;
             }
 
             if (count == 1) {
-                System.out.println("No accounts found for this customer.");
+                IO.println("No accounts found for this customer.");
             }
 
         } catch (java.sql.SQLException e) {
-            System.out.println("Error retrieving accounts: " + e.getMessage());
+            IO.println("Error retrieving accounts: " + e.getMessage());
         }
     }
-    
+
     public static int getAccountIdBySelection(String customerId, int selection) {
         String sql = "SELECT account_id FROM accounts WHERE customer_id = '" + customerId + "' ORDER BY account_id";
-        
+
         try (java.sql.Connection conn = net.sqlitetutorial.Main.getConnection();
              java.sql.Statement stmt = conn.createStatement();
              java.sql.ResultSet rs = stmt.executeQuery(sql)) {
-            
+
             int count = 1;
             while (rs.next()) {
                 if (count == selection) {
@@ -109,10 +103,8 @@ public abstract class Account {
                 count++;
             }
         } catch (java.sql.SQLException e) {
-            System.out.println("Error retrieving account: " + e.getMessage());
+            IO.println("Error retrieving account: " + e.getMessage());
         }
         return -1;
     }
-
-
 }

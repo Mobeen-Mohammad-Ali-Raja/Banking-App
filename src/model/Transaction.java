@@ -16,7 +16,12 @@ public class Transaction {
                 "VALUES (" + accountId + ", '" + transactionType + "', " + amount + ", " + balanceAfter + ", '" +
                 description + "', datetime('now'))";
         Main.runDb(sql);
+
+        // The system should record significant events such as deposits, withdrawals
+        Logger.log(String.format("TRANSACTION: %s | AccountID: %d | Amount: £%.2f | New Balance: £%.2f | %s",
+                transactionType, accountId, amount, balanceAfter, description));
     }
+
 
     public static double getAccountBalance(int accountId) {
         String sql = "SELECT balance FROM accounts WHERE account_id = " + accountId;

@@ -691,6 +691,60 @@ public class CLIMenu {
                         0. Cancel and exit - Return to main menu
                         """);
                 break;
+            case "account personal":
+                Logger.log("Personal Account Help Screen");
+                IO.println("""
+                        --- Personal Account Help ---
+                        Standard banking account for daily use.
+                        
+                        Rules & Fees:
+                        - Minimum Balance: £1.00 (Account cannot be empty).
+                        - Overdraft: Up to £500.00 available.
+                        - Fees: None.
+                        
+                        Operations:
+                        1. Deposit: Add funds.
+                        2. Withdraw: Remove funds (subject to balance/overdraft).
+                        3. View Transactions: See history.
+                        4. Set Up Direct Debit: Schedule a payment to a recipient.
+                        5. Set Up Standing Order: Schedule regular payments (e.g. Monthly).
+                        6. View Scheduled Payments: List all active Direct Debits & Standing Orders.
+                        """);
+                break;
+
+            case "account isa":
+                Logger.log("ISA Account Help Screen");
+                IO.println("""
+                        --- ISA Account Help ---
+                        Tax-free savings account with interest benefits.
+                        
+                        Rules & Fees:
+                        - Limit: Only ONE ISA allowed per customer.
+                        - Interest: 2.75% Annual Interest Rate.
+                        - Overdraft: Not available for ISAs.
+                        
+                        Operations:
+                        4. Apply Annual Interest: Calculates 2.75% of current balance 
+                           and adds it to the account (Can only be done once per day).
+                        """);
+                break;
+
+            case "account business":
+                Logger.log("Business Account Help Screen");
+                IO.println("""
+                        --- Business Account Help ---
+                        Account for registered Sole Traders, Ltd Companies, and Partnerships.
+                        
+                        Rules & Fees:
+                        - Annual Fee: £120.00 (Deducted automatically).
+                        - Overdraft: Up to £1000.00 available.
+                        - Cheque Book: Available upon request.
+                        
+                        Operations:
+                        4. Issue Cheque Book: Registers a cheque book for this account.
+                           (System prevents duplicate issuance).
+                        """);
+                break;
             default:
                 Logger.log("General Help Screen");
                 IO.println("""
@@ -794,15 +848,19 @@ public class CLIMenu {
         int accountId = Account.getAccountIdBySelection(currentCustomer.getCustomerId(), accountSelection);
 
         if (accountId == -1) {
-            Logger.log("Invalid account selected");
+            Logger.log("Error: User selected invalid account index: " + accountSelection);
             IO.println("Invalid account selection.");
             listCustomerAccounts();
             return;
         }
 
-        // Gets the account type, so we know which menu to show
         String accountType = Transaction.getAccountType(accountId);
+        boolean isBusiness = accountType.toUpperCase().contains("BUSINESS");
+        boolean isISA = accountType.equalsIgnoreCase("ISA");
+        boolean isPersonal = accountType.equalsIgnoreCase("PERSONAL"); // Explicit check
         boolean inAccount = true;
+
+        Logger.log("User entered Account Menu for Account ID: " + accountId + " (" + accountType + ")");
 
         while (inAccount) {
             System.out.printf("=== %s (%s) Accounts === %n", currentCustomer.getName(), currentCustomer.getCustomerId());
@@ -812,50 +870,119 @@ public class CLIMenu {
             IO.println("2. Withdraw");
             IO.println("3. View Transactions");
 
-            if (accountType.equalsIgnoreCase("ISA")) {
+            if (isISA) {
                 IO.println("4. Apply Annual Interest");
-            } else if (accountType.equalsIgnoreCase("Business")) {
+                IO.println("5. Help");
+            } else if (isBusiness) {
                 IO.println("4. Issue Cheque Book");
+                IO.println("5. Help");
+            } else if (isPersonal) {
+                // Options to set up direct debit, standing order and view scheduled payments
+                IO.println("4. Set Up Direct Debit");
+                IO.println("5. Set Up Standing Order");
+                IO.println("6. View Scheduled Payments");
+                IO.println("7. Help");
             } else {
-                IO.println("4. Help"); // Personal accounts just see Help here
+                IO.println("4. Help");
             }
 
             IO.println("0. Back to Accounts List\n");
             IO.print("Select an option: ");
 
-            byte choice = reader.nextByte();
-            reader.nextLine();
+            byte choice = 0;
+            try {
+                choice = reader.nextByte();
+                reader.nextLine();
+            } catch (Exception e) {
+                reader.nextLine();
+            }
 
             switch (choice) {
                 case 1:
-                    Logger.log("1. Deposit");
+                    Logger.log("User Selected: 1. Deposit");
                     deposit(accountSelection);
                     break;
                 case 2:
-                    Logger.log("2. Withdraw");
+                    Logger.log("User Selected: 2. Withdraw");
                     withdraw(accountSelection);
                     break;
                 case 3:
-                    Logger.log("3. View Transactions");
+                    Logger.log("User Selected: 3. View Transactions");
                     viewTransactions(accountId);
                     break;
+
                 case 4:
-                    // Handle the dynamic options
-                    if (accountType.equalsIgnoreCase("ISA")) {
+                    if (isISA) {
+                        Logger.log("User Selected: Apply ISA Interest");
                         DataHandling.applyISAInterest(accountId);
-                    } else if (accountType.equalsIgnoreCase("Business")) {
+                    } else if (isBusiness) {
+                        Logger.log("User Selected: Issue Cheque Book");
                         DataHandling.issueChequeBook(accountId);
+                    } else if (isPersonal) {
+                        // Direct Debit
+                        Logger.log("User Selected: Setup Direct Debit");
+                        IO.print("Enter Recipient Name: ");
+                        String recipient = reader.nextLine();
+                        IO.print("Enter Amount: £");
+                        try {
+                            double amount = reader.nextDouble();
+                            reader.nextLine();
+                            DataHandling.setupDirectDebit(accountId, recipient, amount);
+                        } catch(Exception e) { reader.nextLine(); IO.println("Invalid amount."); }
                     } else {
-                        help("select accounts");
+                        help("account personal");
                     }
                     break;
+
+                case 5:
+                    if (isISA) {
+                        help("account isa");
+                    } else if (isBusiness) {
+                        help("account business");
+                    } else if (isPersonal) {
+                        // NEW: Standing Order
+                        Logger.log("User Selected: Setup Standing Order");
+                        IO.print("Enter Recipient Name: ");
+                        String recipient = reader.nextLine();
+                        IO.print("Enter Amount: £");
+                        try {
+                            double amount = reader.nextDouble();
+                            reader.nextLine();
+                            IO.print("Enter Frequency (e.g. Monthly): ");
+                            String freq = reader.nextLine();
+                            DataHandling.setupStandingOrder(accountId, recipient, amount, freq);
+                        } catch(Exception e) { reader.nextLine(); IO.println("Invalid amount."); }
+                    } else {
+                        IO.println("Invalid option.");
+                    }
+                    break;
+
+                // View personal scheduled payments
+                case 6:
+                    if (isPersonal) {
+                        Logger.log("User Selected: View Scheduled Payments");
+                        DataHandling.viewScheduledPayments(accountId);
+                    } else {
+                        IO.println("Invalid option.");
+                    }
+                    break;
+
+                // Personal account
+                case 7:
+                    if (isPersonal) {
+                        help("account personal");
+                    } else {
+                        IO.println("Invalid option.");
+                    }
+                    break;
+
                 case 0:
-                    Logger.log("0. Back to Accounts List");
+                    Logger.log("User Selected: 0. Back");
                     inAccount = false;
                     listCustomerAccounts();
                     break;
                 default:
-                    Logger.log("Invalid option selected");
+                    Logger.log("Invalid Option Selected in Account Menu");
                     IO.println("Invalid option, Try again!\n");
             }
         }
@@ -886,7 +1013,7 @@ public class CLIMenu {
 
 
             IO.println("Depositing: £" + amount);
-            Logger.log("Despositing: £" + amount);
+            Logger.log("Depositing: £" + amount);
             DataHandling.deposit(accountId, amount);
 
         } catch (Exception e) {
@@ -1004,21 +1131,31 @@ public class CLIMenu {
     private static void createAccount(String accountType) {
         IO.println("\n=== Create " + accountType.toUpperCase() + " Account ===");
 
-        // 1. ISA RULE: Only one per customer
+        // 1. ISA Check
         if (accountType.equalsIgnoreCase("ISA")) {
             if (DataHandling.customerHasISA(currentCustomer.getCustomerId())) {
-                Logger.log("Error: Customer has existing ISA Account");
+                Logger.log("Blocked: Customer " + currentCustomer.getCustomerId() + " attempted second ISA.");
                 IO.println("Error: Customer already has an ISA Account. Limit is one per customer.");
                 IO.print("\nPress Enter to return...");
                 reader.nextLine();
-                return; // Goes back to Customer Portal
+                return;
             }
         }
 
-        // 2. BUSINESS RULE: Validate Business Type (Now with Loop)
+        // 2. Business Check
+        if (accountType.equalsIgnoreCase("Business")) {
+            if (DataHandling.customerHasBusiness(currentCustomer.getCustomerId())) {
+                Logger.log("Blocked: Customer " + currentCustomer.getCustomerId() + " attempted second Business Account.");
+                IO.println("Error: Customer already has a Business Account. Limit is one per customer.");
+                IO.print("\nPress Enter to return...");
+                reader.nextLine();
+                return;
+            }
+        }
+
+        // 3. Business Type Selection
         if (accountType.equalsIgnoreCase("Business")) {
             boolean validBusinessType = false;
-
             while (!validBusinessType) {
                 IO.println("\nPlease select Business Type:");
                 IO.println("1. Sole Trader");
@@ -1032,27 +1169,31 @@ public class CLIMenu {
                     reader.nextLine();
                 } catch (Exception e) {
                     reader.nextLine();
+                    Logger.log("Invalid Input during Business Type Selection");
                     IO.println("Invalid input. Please enter a number.");
-                    continue; // Restarts the loop
+                    continue;
                 }
 
                 if (typeChoice == 0) {
+                    Logger.log("User Cancelled Business Account Creation");
                     IO.println("Operation cancelled.");
                     return;
                 }
 
-                // Check eligibility
-                if (typeChoice == 1 || typeChoice == 2) {
-                    validBusinessType = true; // Breaks the loop, moves to next step
+                if (typeChoice == 1) {
+                    accountType = "Business (Sole Trader)";
+                    validBusinessType = true;
+                } else if (typeChoice == 2) {
+                    accountType = "Business (Ltd)";
+                    validBusinessType = true;
                 } else {
-                    Logger.log("Error: business type is not eligible for an account");
-                IO.println("Error: Invalid selection. Eligible types: Sole Trader and Ltd.");
-                    // Loop continues automatically, asking again
+                    Logger.log("Invalid Business Type Selection: " + typeChoice);
+                    IO.println("Error: Invalid selection. Eligible types: Sole Trader and Ltd.");
                 }
             }
         }
 
-        // 3. Set Initial Balance
+        // 4. Balance Selection with Logging
         double balance = 0;
         boolean validBalance = false;
 
@@ -1069,41 +1210,41 @@ public class CLIMenu {
                 reader.nextLine();
             } catch (Exception e) {
                 reader.nextLine();
-                IO.println("Invalid input.");
                 continue;
             }
 
             if (choice == 0) {
-                Logger.log("0. Cancel");IO.println("Operation cancelled.");
-                openAccount();
+                Logger.log("User Cancelled Account Creation");
+                IO.println("Operation cancelled.");
+                return;
             } else if (choice == 2) {
-                Logger.log("2. Help");help("create account");
-                continue; // Shows menu again after help
+                help("create account");
+                continue;
             } else if (choice == 1) {
                 IO.print("Enter initial deposit amount: £");
                 try {
                     balance = reader.nextDouble();
                     reader.nextLine();
-                } catch (Exception e) {Logger.log("Error message: " + e.getMessage());
+                } catch (Exception e) {
+                    Logger.log("Input Error: Invalid non-numeric balance entered");
                     IO.println("Invalid amount entered. Please try again.");
                     reader.nextLine();
-                    continue; // Restarts the loop
+                    continue;
                 }
 
-                // No negative money
+                // --- NEW LOGGING FOR VALIDATION FAILURES ---
                 if (balance < 0) {
+                    Logger.log("Validation Fail: User entered negative balance: " + balance);
                     IO.println("Error: Opening balance cannot be negative.");
-                    IO.println("Please try again.");
-                    continue; // Goes back to "1. Set Initial Balance"
+                    continue;
                 }
 
-                // Personal Rule: Min £1
                 if (accountType.equalsIgnoreCase("Personal") && balance < 1.00) {
+                    Logger.log("Validation Fail: Personal Account balance < £1.00");
                     IO.println("Error: Personal Accounts require a minimum opening balance of £1.00.");
-                    continue; // Goes back to "1. Set Initial Balance"
+                    continue;
                 }
 
-                // If checks passes, mark as valid to break the loop
                 validBalance = true;
             } else {
                 IO.println("Invalid option.");
@@ -1123,12 +1264,14 @@ public class CLIMenu {
         } catch (Exception e) { reader.nextLine(); }
 
         if (confirm == 1) {
+            Logger.log("User Confirmed Creation of " + accountType + " Account.");
             DataHandling.createAccount(currentCustomer.getCustomerId(), accountType, balance);
+
             IO.println(accountType + " Account Created Successfully!");
             IO.println("=== Back to Customer Portal ===");
             customerPortal();
         } else {
-            Logger.log("0. Cancel");
+            Logger.log("User Cancelled Confirmation.");
             IO.println("Account creation cancelled.");
         }
     }

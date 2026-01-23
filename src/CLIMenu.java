@@ -189,7 +189,7 @@ public class CLIMenu {
             if (nationalID.isEmpty()) {
                 IO.println("Error: National ID cannot be empty.");
             } else if (!CustomerAuthentication.validNationalIdChecker(nationalID)) {
-                IO.println("Error: Invalid National ID format. Expected format: 2 letters, 6 numbers, 1 letter (e.g, AB123456C");
+                IO.println("Error: Invalid National ID format. Expected format: 2 letters, 6 numbers, 1 letter (e.g, AB123456C)");
             } else {
                 // Checking if national ID already exists in database
                 Customer existingCustomer = CustomerAuthentication.findCustomerByNationalId(nationalID);
@@ -1183,6 +1183,7 @@ public class CLIMenu {
                 IO.println("Error: Customer already has an ISA Account. Limit is one per customer.");
                 IO.print("\nPress Enter to return...");
                 reader.nextLine();
+                customerPortal();
                 return;
             }
         }
@@ -1194,6 +1195,7 @@ public class CLIMenu {
                 IO.println("Error: Customer already has a Business Account. Limit is one per customer.");
                 IO.print("\nPress Enter to return...");
                 reader.nextLine();
+                customerPortal();
                 return;
             }
         }

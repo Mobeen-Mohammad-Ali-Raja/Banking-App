@@ -173,6 +173,8 @@ public class CLIMenu {
                 IO.println("Error: Name must be at least 2 characters long.");
             } else if (name.length() > 60) {
                 IO.println("Error: Name cannot exceed 60 characters.");
+            } else if (!name.matches("^(?!\\s)[a-zA-Z\\s'-]{1,60}$")) {
+                IO.println("Error: Name cannot include numbers or special characters");
             } else {
                 validName = true;
             }

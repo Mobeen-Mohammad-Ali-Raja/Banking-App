@@ -1,5 +1,6 @@
 package net.sqlitetutorial;
 
+import model.Logger;
 import model.Transaction;
 import net.sqlitetutorial.utils.AccountNumberGenerator;
 
@@ -64,6 +65,7 @@ public class DataHandling {
             if (openingBalance >= fee) {
                 openingBalance -= fee;
                 IO.println("Annual fee of £120.00 applied.");
+                Logger.log("Annual fee of £120.00 applied.");
             } else {
                 IO.println("Warning: Opening balance insufficient for annual fee.");
                 openingBalance -= fee;
@@ -73,14 +75,14 @@ public class DataHandling {
         String sql = "INSERT INTO accounts (customer_id, account_type, account_number, sort_code, balance, opening_balance, has_overdraft_facility, created_at) " + "VALUES ('" + customerId + "', '" + accountType + "', '" + accountNumber + "', '" + sortCode + "', " + openingBalance + ", " + openingBalance + ", " + hasOverdraftFacility + ", datetime('now'))";
         Main.runDb(sql);
         System.out.println("Account created: " + accountNumber + " (Sort Code: " + sortCode + ")");
-        Logger.log("ACCOUNT CREATED SUCCESS: " + accountNumber + " | Sort: " + sortCode);
+        Logger.log("Account created: " + accountNumber + " (Sort Code: " + sortCode + ")");
     }
 
     // Deposit money
     public static void deposit(int accountId, double amount) {
         if (amount <= 0) {
             System.out.println("Error: Deposit amount must be positive");
-            //Logger.log("WARNING: Attempted negative deposit on Account " + accountId);
+            Logger.log("Error: Deposit amount must be positive");
             return;
         }
 
@@ -92,12 +94,14 @@ public class DataHandling {
 
         Transaction.recordTransaction(accountId, "Deposit", amount, newBalance, "Deposit to account");
         System.out.println("Deposited: £" + amount + " | New Balance: £" + newBalance);
+        Logger.log("Deposited: £" + amount + " | New Balance: £" + newBalance);
     }
 
     // Withdraw money
     public static void withdraw(int accountId, double amount) {
         if (amount <= 0) {
             System.out.println("Error: Withdrawal amount must be positive");
+            Logger.log("Error: Withdrawal amount must be positive");
             return;
         }
 
@@ -109,6 +113,8 @@ public class DataHandling {
 
         if (availableFunds < amount) {
             System.out.println("Error: Insufficient funds. Current balance: £" + currentBalance +
+                    " | Available with overdraft: £" + availableFunds);
+            Logger.log("Error: Insufficient funds. Current balance: £" + currentBalance +
                     " | Available with overdraft: £" + availableFunds);
             return;
         }
@@ -125,8 +131,8 @@ public class DataHandling {
 
         Transaction.recordTransaction(accountId, "Withdrawal", amount, newBalance, description);
         System.out.println("Withdrawn: £" + amount + " | New Balance: £" + newBalance);
+        Logger.log("Withdrawn: £" + amount + " | New Balance: £" + newBalance);
     }
-
 
 
     private static double getAvailableFunds(double currentBalance, String accountType, boolean hasOverdraftFacility) {
@@ -145,14 +151,14 @@ public class DataHandling {
 
     // View all tables
     public static void viewAllTables() {
-        String[] tables = {"customers", "accounts", "transactions","direct_debits","standing_orders"};
+        String[] tables = {"customers", "accounts", "transactions", "direct_debits", "standing_orders"};
         for (String table : tables) {
             System.out.println("\n=== " + table.toUpperCase() + " ===");
             Main.viewTable(table);
         }
     }
 
-        public static void setupDirectDebit(int accountId, String recipient, double amount) {
+    public static void setupDirectDebit(int accountId, String recipient, double amount) {
         String sql = "INSERT INTO direct_debits (account_id, recipient_name, amount) VALUES (" +
                 accountId + ", '" + recipient + "', " + amount + ")";
         Main.runDb(sql);
@@ -218,6 +224,7 @@ public class DataHandling {
             }
         } catch (SQLException e) {
             IO.println("Error checking ISA status: " + e.getMessage());
+            Logger.log("ERROR: Checking ISA status failed for Account " + customerId + " | Error: " + e.getMessage()); // NEW
         }
         return false;
     }
@@ -235,6 +242,7 @@ public class DataHandling {
         // Doesnt give free money to empty accounts
         if (currentBalance <= 0) {
             IO.println("Error: Cannot apply interest to an account with zero or negative balance.");
+            Logger.log("ERROR: Cannot apply interest to an account with zero or negative balance."); // NEW
             return;
         }
 
@@ -248,8 +256,12 @@ public class DataHandling {
         Transaction.recordTransaction(accountId, "Interest", interestAmount, newBalance, "Annual ISA Interest Applied");
 
         IO.println("Annual Interest Rate of " + (interestRate * 100) + "% applied.");
+        Logger.log("Annual Interest Rate of " + interestRate + " % applied.");
         IO.println("Interest Calculated: £" + String.format("%.2f", interestAmount));
+
+
         IO.println("New Balance: £" + String.format("%.2f", newBalance));
+        Logger.log("New Balance: £" + String.format("%.2f", newBalance));
     }
 
     // Check if ISA yearly interest
@@ -265,6 +277,7 @@ public class DataHandling {
             }
         } catch (SQLException e) {
             IO.println("Error checking interest status: " + e.getMessage());
+            Logger.log("ERROR: Checking interest status failed for Account " + accountId + " | Error: " + e.getMessage());
         }
         return false;
     }
@@ -282,6 +295,7 @@ public class DataHandling {
             }
         } catch (SQLException e) {
             IO.println("Error checking Business account status: " + e.getMessage());
+            Logger.log("ERROR: Checking Business account status failed for Customer " + customerId + " | Error: " + e.getMessage());
         }
         return false;
     }

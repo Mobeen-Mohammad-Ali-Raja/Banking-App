@@ -734,7 +734,7 @@ public class CLIMenu {
                         4. Set Up Direct Debit: Schedule a payment to a recipient.
                         5. Set Up Standing Order: Schedule regular payments (e.g. Monthly).
                         6. View Scheduled Payments: List all active Direct Debits & Standing Orders.
-                        """);
+                        """);   
                 break;
 
             case "account isa":

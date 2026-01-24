@@ -173,6 +173,8 @@ public class CLIMenu {
                 IO.println("Error: Name must be at least 2 characters long.");
             } else if (name.length() > 60) {
                 IO.println("Error: Name cannot exceed 60 characters.");
+            } else if (!name.matches("^(?!\\s)[a-zA-Z\\s'-]{1,60}$")) {
+                IO.println("Error: Name cannot include numbers or special characters");
             } else {
                 validName = true;
             }
@@ -641,9 +643,7 @@ public class CLIMenu {
                 IO.println("""
                         --- Create Account Help ---
                         1. Set Initial Balance - Specify starting balance for the new account
-                        2. Enable Overdraft - Allow account to go below zero (subject to approval)
-                        3. Complete Account Creation - Finish setup and create the account
-                        4. Help - Display this help information
+                        2. Help - Display this help information
                         0. Cancel - Abort account creation
                         """);
                 break;
@@ -813,6 +813,7 @@ public class CLIMenu {
                 case 4:
                     Logger.log("4. Help");
                     help("customer portal");
+                    customerPortal();
                     break;
                 case 0:
                     Logger.log("0. Back to Main Menu");
@@ -855,6 +856,7 @@ public class CLIMenu {
                 case 2:
                     Logger.log("2. Help");
                     help("list customer accounts");
+                    listCustomerAccounts();
                     break;
                 case 0:
                     Logger.log("0. Back");
@@ -1263,6 +1265,7 @@ public class CLIMenu {
             if (choice == 0) {
                 Logger.log("User Cancelled Account Creation");
                 IO.println("Operation cancelled.");
+                openAccount();
                 return;
             } else if (choice == 2) {
                 help("create account");

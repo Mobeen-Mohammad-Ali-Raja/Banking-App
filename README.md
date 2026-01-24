@@ -38,12 +38,12 @@ This is a Java-based command-line interface (CLI) banking system developed for A
 ### Business Account
 * Sort Code: 60-70-70
 * Annual fee: £120 (automatically applied)
-* Eligible business types: Sole Trader, Ltd, Partnership
+* Eligible business types: Sole Trader and Ltd
 * Cheque book issuance capability
 * Overdraft facility (up to £1000)
 * Only one business account per customer
 
-## Project Structure
+[//]: # (## Project Structure)
 
 ## Installation & Setup
 
@@ -62,6 +62,8 @@ The system uses three main SQLite tables:
 * `customers`: Stores customer identification information
 * `accounts`: Stores account details including type, balance and sort codes
 * `transactions`: Logs all financial transactions
+* `direct debits`: Stores customer's direct debits
+* `standing orders`: Stores customer's standing orders
 
 ## Logging
 All system events are logged to `logs.txt` with timestamps, including:

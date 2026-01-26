@@ -933,7 +933,6 @@ public class CLIMenu {
                         try {
                             double amount = reader.nextDouble();
                             reader.nextLine();
-                            // NEW: Ask for Date
                             IO.print("Enter Start Date (dd/mm/yyyy): ");
                             String dateInput = reader.nextLine();
 

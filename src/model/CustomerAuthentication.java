@@ -178,4 +178,22 @@ public class CustomerAuthentication {
         Logger.log("Returning driving licence check boolean result");
         return drivingLicence.matches("^[a-zA-z0-9]{16}$");
     }
+
+    public static boolean validUtilityBillNumberChecker(String utilityBillNumber){
+        /*
+           The regex checker below checks if the utility bill number contains
+           between ten and twelve numbers, this also returns false if used
+           String is shorter or larger than said limit, or not a number
+        */
+        return utilityBillNumber.matches("^[0-9]{10,12}$");
+    }
+
+    public static boolean validCouncilTaxLetterNumberChecker(String councilTaxLetterNumber){
+        /*
+           The regex checker below checks if the council tax letter  number contains
+           between eight and ten numbers, this also returns false if used
+           String is shorter or larger than said limit, or not a number
+        */
+        return councilTaxLetterNumber.matches("^[0-9]{8,10}$");
+    }
 }

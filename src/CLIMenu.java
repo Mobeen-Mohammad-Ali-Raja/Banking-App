@@ -50,11 +50,11 @@ public class CLIMenu {
                 switchCustomer();
                 break;
             case 4:
-                Logger.log("5. Run End-of-Day Processing");
+                Logger.log("4. Run End-of-Day Processing");
                 DataHandling.processScheduledPayments();
                 break;
             case 5:
-                Logger.log("4. Help");
+                Logger.log("5. Help");
                 help("main menu");
                 break;
             case 0:

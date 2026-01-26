@@ -59,6 +59,8 @@ public class Customer {
         // String body of view
         String skeletonView = """
                 -----------------
+                Customer ID: %s
+                -----------------
                 Name: %s
                 -----------------
                 National insurance number: %s
@@ -71,7 +73,7 @@ public class Customer {
                 """;
 
         // Filling the body of the skeletonView String with a format function, then returning it as a string
-        return String.format(skeletonView, NAME, NATIONAL_INSURANCE_NUMBER, PHOTO_ID, ADDRESS, CREATED_AT);
+        return String.format(skeletonView, CUSTOMER_ID, NAME, NATIONAL_INSURANCE_NUMBER, PHOTO_ID, ADDRESS, CREATED_AT);
     }
 
 }

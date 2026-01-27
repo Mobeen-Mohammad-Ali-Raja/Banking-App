@@ -216,7 +216,7 @@ public class DataHandling {
                     withdraw(accountId, amount);
 
                     Logger.log("EXECUTED STANDING ORDER: Account " + accountId + " -> " + recipient + " (£" + amount + ")");
-                    IO.println(" > " + accountId + " PAID: £" + amount + " to " + recipient);
+                    IO.println(" > Account ID:" + accountId + " PAID: £" + amount + " to " + recipient);
 
                     // Update Next Payment Date ( 1 Month)
                     String updateSql = "UPDATE standing_orders SET next_payment_date = date(next_payment_date, '+1 month') WHERE id = " + id;
@@ -225,7 +225,7 @@ public class DataHandling {
                     processedCount++;
                 } else {
                     // Failed payment
-                    IO.println(" > " + accountId + " FAILED: £" + amount + " to " + recipient + " - Insufficient Funds");
+                    IO.println(" > Account ID:" + accountId + " FAILED: £" + amount + " to " + recipient + " - Insufficient Funds");
                     Logger.log("FAILED PAYMENT: Account " + accountId + " | Reason: Insufficient Funds | Amount: " + amount);
                     failedCount++;
                 }
@@ -252,7 +252,7 @@ public class DataHandling {
                 if (availableFunds >= amount) {
                     withdraw(accountId, amount);
                     Logger.log("EXECUTED DIRECT DEBIT: Account " + accountId + " -> " + recipient + " (£" + amount + ")");
-                    IO.println(" > " + accountId + " PAID: £" + amount + " to " + recipient);
+                    IO.println(" > Account ID:" + accountId + " PAID: £" + amount + " to " + recipient);
 
                     // Update date to next month
                     String updateSql = "UPDATE direct_debits SET next_payment_date = date(next_payment_date, '+1 month') WHERE id = " + id;
@@ -260,7 +260,7 @@ public class DataHandling {
 
                     processedCount++;
                 } else {
-                    IO.println(" > " + accountId + " FAILED: £" + amount + " to " + recipient + " - Insufficient Funds");
+                    IO.println(" > Account ID:" + accountId + " FAILED: £" + amount + " to " + recipient + " - Insufficient Funds");
                     Logger.log("FAILED PAYMENT: Account " + accountId + " | Reason: Insufficient Funds | Amount: " + amount);
                     failedCount++;
                 }
@@ -302,7 +302,8 @@ public class DataHandling {
             boolean found = false;
             while (rs.next()) {
                 found = true;
-                IO.println("- Recipient: " + rs.getString("recipient_name") + " | Amount: £" + rs.getDouble("amount") + " | Freq: " + rs.getString("frequency"));
+                IO.println("- Recipient: " + rs.getString("recipient_name") + " | Amount: £" + rs.getDouble("amount") + " | Freq: " + rs.getString("frequency") +
+                        " | Next Payment: " + rs.getString("next_payment_date"));
             }
             if (!found) IO.println("No Standing Orders set up.");
 

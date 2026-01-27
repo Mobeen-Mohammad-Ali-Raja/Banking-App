@@ -192,81 +192,150 @@ public class DataHandling {
         int processedCount = 0;
         int failedCount = 0;
 
-        // Processing Standing Orders (Date <= Today)
-        String sqlSO = "SELECT * FROM standing_orders WHERE next_payment_date <= date('now')";
+        // Standing Order
+
+        // Collect the IDs
+        java.util.List<Integer> soIds = new java.util.ArrayList<>();
+        String findSoSql = "SELECT id FROM standing_orders WHERE next_payment_date <= date('now')";
 
         try (Connection conn = Main.getConnection();
              Statement stmt = conn.createStatement();
-             ResultSet rs = stmt.executeQuery(sqlSO)) {
-
+             ResultSet rs = stmt.executeQuery(findSoSql)) {
             while (rs.next()) {
-                int id = rs.getInt("id"); // Needed to update the date later
-                int accountId = rs.getInt("account_id");
-                String recipient = rs.getString("recipient_name");
-                double amount = rs.getDouble("amount");
-                String frequency = rs.getString("frequency");
-
-                // Check Funds
-                double currentBalance = Transaction.getAccountBalance(accountId);
-                String accountType = Transaction.getAccountType(accountId);
-                boolean hasOverdraft = Transaction.hasOverdraftFacility(accountId);
-                double availableFunds = getAvailableFunds(currentBalance, accountType, hasOverdraft);
-
-                if (availableFunds >= amount) {
-                    withdraw(accountId, amount);
-
-                    Logger.log("EXECUTED STANDING ORDER: Account " + accountId + " -> " + recipient + " (£" + amount + ")");
-                    IO.println(" > Account ID:" + accountId + " PAID: £" + amount + " to " + recipient);
-
-                    // Update Next Payment Date ( 1 Month)
-                    String updateSql = "UPDATE standing_orders SET next_payment_date = date(next_payment_date, '+1 month') WHERE id = " + id;
-                    try (Statement updateStmt = conn.createStatement()) { updateStmt.executeUpdate(updateSql); }
-
-                    processedCount++;
-                } else {
-                    // Failed payment
-                    IO.println(" > Account ID:" + accountId + " FAILED: £" + amount + " to " + recipient + " - Insufficient Funds");
-                    Logger.log("FAILED PAYMENT: Account " + accountId + " | Reason: Insufficient Funds | Amount: " + amount);
-                    failedCount++;
-                }
+                soIds.add(rs.getInt("id"));
             }
         } catch (SQLException e) {
-            IO.println("Error: " + e.getMessage());
+            IO.println("Error finding Standing Orders: " + e.getMessage());
         }
 
-        // Processing Direct Debits
-        String sqlDD = "SELECT * FROM direct_debits WHERE next_payment_date <= date('now')";
+        // Process each ID
+        for (int id : soIds) {
 
-        try (Connection conn = Main.getConnection();
-             Statement stmt = conn.createStatement();
-             ResultSet rs = stmt.executeQuery(sqlDD)) {
+            int accountId = -1;
+            String recipient = "";
+            double amount = 0;
+            String frequency = "";
+            boolean found = false;
 
-            while (rs.next()) {
-                int id = rs.getInt("id");
-                int accountId = rs.getInt("account_id");
-                String recipient = rs.getString("recipient_name");
-                double amount = rs.getDouble("amount");
+            // Fetch the data and close the connection
+            String fetchSql = "SELECT * FROM standing_orders WHERE id = " + id;
+            try (Connection conn = Main.getConnection();
+                 Statement stmt = conn.createStatement();
+                 ResultSet rs = stmt.executeQuery(fetchSql)) {
 
-                double availableFunds = getAvailableFunds(Transaction.getAccountBalance(accountId), Transaction.getAccountType(accountId), Transaction.hasOverdraftFacility(accountId));
+                if (rs.next()) {
+                    accountId = rs.getInt("account_id");
+                    recipient = rs.getString("recipient_name");
+                    amount = rs.getDouble("amount");
+                    frequency = rs.getString("frequency");
+                    found = true;
+                }
+            } catch (SQLException e) {
+                IO.println("Error reading SO ID " + id + ": " + e.getMessage());
+                continue;
+            }
 
-                if (availableFunds >= amount) {
-                    withdraw(accountId, amount);
-                    Logger.log("EXECUTED DIRECT DEBIT: Account " + accountId + " -> " + recipient + " (£" + amount + ")");
-                    IO.println(" > Account ID:" + accountId + " PAID: £" + amount + " to " + recipient);
+            // write the new data
+            if (found) {
+                double available = getAvailableFunds(Transaction.getAccountBalance(accountId),
+                        Transaction.getAccountType(accountId),
+                        Transaction.hasOverdraftFacility(accountId));
 
-                    // Update date to next month
-                    String updateSql = "UPDATE direct_debits SET next_payment_date = date(next_payment_date, '+1 month') WHERE id = " + id;
-                    try (Statement updateStmt = conn.createStatement()) { updateStmt.executeUpdate(updateSql); }
+                if (available >= amount) {
+                    // Updates the balance
+                    double newBalance = Transaction.getAccountBalance(accountId) - amount;
+                    String updateBal = "UPDATE accounts SET balance = " + newBalance + " WHERE account_id = " + accountId;
+                    Main.runDb(updateBal);
+
+                    // Record the Transaction
+                    Transaction.recordTransaction(accountId, "Standing Order", amount, newBalance, "Payment to " + recipient);
+
+                    // Log
+                    IO.println(" > Account ID:" + accountId + " PAID: £" + String.format("%.2f", amount) + " to " + recipient);
+                    Logger.log("EXECUTED SO: Account " + accountId + " -> " + recipient);
+
+                    // Updates Date
+                    String modifier = "+1 month";
+                    if ("Weekly".equalsIgnoreCase(frequency)) modifier = "+7 days";
+                    else if ("Daily".equalsIgnoreCase(frequency)) modifier = "+1 day";
+                    else if ("Yearly".equalsIgnoreCase(frequency)) modifier = "+1 year";
+
+                    String updateDate = "UPDATE standing_orders SET next_payment_date = date(next_payment_date, '" + modifier + "') WHERE id = " + id;
+                    Main.runDb(updateDate);
 
                     processedCount++;
                 } else {
                     IO.println(" > Account ID:" + accountId + " FAILED: £" + amount + " to " + recipient + " - Insufficient Funds");
-                    Logger.log("FAILED PAYMENT: Account " + accountId + " | Reason: Insufficient Funds | Amount: " + amount);
+                    Logger.log("FAILED SO: Account " + accountId + " - Insufficient Funds");
                     failedCount++;
                 }
             }
+        }
+
+        // Direct debit
+
+        java.util.List<Integer> ddIds = new java.util.ArrayList<>();
+        String findDdSql = "SELECT id FROM direct_debits WHERE next_payment_date <= date('now')";
+
+        try (Connection conn = Main.getConnection();
+             Statement stmt = conn.createStatement();
+             ResultSet rs = stmt.executeQuery(findDdSql)) {
+            while (rs.next()) {
+                ddIds.add(rs.getInt("id"));
+            }
         } catch (SQLException e) {
-            IO.println("Error: " + e.getMessage());
+            IO.println("Error finding Direct Debits: " + e.getMessage());
+        }
+
+        for (int id : ddIds) {
+            int accountId = -1;
+            String recipient = "";
+            double amount = 0;
+            boolean found = false;
+
+            // Fetch the data and close the connection
+            String fetchSql = "SELECT * FROM direct_debits WHERE id = " + id;
+            try (Connection conn = Main.getConnection();
+                 Statement stmt = conn.createStatement();
+                 ResultSet rs = stmt.executeQuery(fetchSql)) {
+
+                if (rs.next()) {
+                    accountId = rs.getInt("account_id");
+                    recipient = rs.getString("recipient_name");
+                    amount = rs.getDouble("amount");
+                    found = true;
+                }
+            } catch (SQLException e) {
+                IO.println("Error reading DD ID " + id + ": " + e.getMessage());
+                continue;
+            }
+
+            // Process the data
+            if (found) {
+                double available = getAvailableFunds(Transaction.getAccountBalance(accountId),
+                        Transaction.getAccountType(accountId),
+                        Transaction.hasOverdraftFacility(accountId));
+
+                if (available >= amount) {
+                    double newBalance = Transaction.getAccountBalance(accountId) - amount;
+                    String updateBal = "UPDATE accounts SET balance = " + newBalance + " WHERE account_id = " + accountId;
+                    Main.runDb(updateBal);
+
+                    Transaction.recordTransaction(accountId, "Direct Debit", amount, newBalance, "Payment to " + recipient);
+
+                    IO.println(" > Account ID:" + accountId + " PAID: £" + String.format("%.2f", amount) + " to " + recipient);
+                    Logger.log("EXECUTED DD: Account " + accountId + " -> " + recipient);
+
+                    String updateDate = "UPDATE direct_debits SET next_payment_date = date(next_payment_date, '+1 month') WHERE id = " + id;
+                    Main.runDb(updateDate);
+
+                    processedCount++;
+                } else {
+                    IO.println(" > Account ID:" + accountId + " FAILED: £" + amount + " to " + recipient + " - Insufficient Funds");
+                    Logger.log("FAILED DD: Account " + accountId + " - Insufficient Funds");
+                    failedCount++;
+                }
+            }
         }
 
         IO.println("--------------------------------");

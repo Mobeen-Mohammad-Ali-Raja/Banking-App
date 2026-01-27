@@ -758,7 +758,7 @@ public class CLIMenu {
                         - Overdraft: Not available for ISAs.
                         
                         Operations:
-                        4. Apply Annual Interest: Calculates 2.75% of current balance 
+                        4. Apply Annual Interest: Calculates 2.75% of current balance
                            and adds it to the account (Can only be done once per day).
                         """);
                 break;
@@ -1037,6 +1037,11 @@ public class CLIMenu {
                             // Sends data to Database
                             DataHandling.setupStandingOrder(accountId, recipient, amount, freq, dateInput);
                         }
+                        if (isISA) {
+                            help("account isa");
+                        } else if (isBusiness) {
+                            help("account business");
+                        }
                     break;
 
                     // View personal scheduled payments
@@ -1049,12 +1054,12 @@ public class CLIMenu {
                         }
                     break;
 
-                // Personal accounts
-                case 7:
-                    if (isPersonal) {
-                        help("account personal");
-                    } else {
-                        IO.println("Invalid option.");
+                    // Personal accounts
+                    case 7:
+                        if (isPersonal) {
+                            help("account personal");
+                        } else {
+                            IO.println("Invalid option.");
                         }
                     break;
                     case 0:

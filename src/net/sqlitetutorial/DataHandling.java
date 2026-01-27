@@ -8,8 +8,6 @@ import model.Account;
 import model.ISAAccount;
 import model.BusinessAccount;
 
-import model.Logger;
-
 import java.sql.Connection;
 import java.sql.ResultSet;
 import java.sql.SQLException;
@@ -158,20 +156,190 @@ public class DataHandling {
         }
     }
 
-    public static void setupDirectDebit(int accountId, String recipient, double amount) {
-        String sql = "INSERT INTO direct_debits (account_id, recipient_name, amount) VALUES (" +
-                accountId + ", '" + recipient + "', " + amount + ")";
-        Main.runDb(sql);
-        IO.println("Success: Direct Debit set up for " + recipient + " (£" + amount + ")");
-        Logger.log("DIRECT DEBIT SETUP: Account " + accountId + " | Recipient: " + recipient + " | Amount: " + amount);
+    // User types 25/02/2024 -> DB saves 2024-02-25)
+    private static String formatDateForDB(String userDate) {
+        try {
+            java.time.format.DateTimeFormatter userFmt = java.time.format.DateTimeFormatter.ofPattern("dd/MM/yyyy");
+            java.time.format.DateTimeFormatter dbFmt = java.time.format.DateTimeFormatter.ofPattern("yyyy-MM-dd");
+            java.time.LocalDate date = java.time.LocalDate.parse(userDate, userFmt);
+            return date.format(dbFmt);
+        } catch (Exception e) {
+            IO.println("Warning: Invalid date format. Defaulting to TODAY.");
+            return java.time.LocalDate.now().toString();
+        }
     }
 
-    public static void setupStandingOrder(int accountId, String recipient, double amount, String frequency) {
-        String sql = "INSERT INTO standing_orders (account_id, recipient_name, amount, frequency) VALUES (" +
-                accountId + ", '" + recipient + "', " + amount + ", '" + frequency + "')";
+    public static void setupDirectDebit(int accountId, String recipient, double amount, String dateInput) {
+        String dbDate = formatDateForDB(dateInput); // Convert date
+        String sql = "INSERT INTO direct_debits (account_id, recipient_name, amount, next_payment_date) VALUES (" +
+                accountId + ", '" + recipient + "', " + amount + ", '" + dbDate + "')";
         Main.runDb(sql);
-        IO.println("Success: Standing Order set up for " + recipient + " (£" + amount + " " + frequency + ")");
-        Logger.log("STANDING ORDER SETUP: Account " + accountId + " | Recipient: " + recipient + " | Amount: " + amount + " | Freq: " + frequency);
+        IO.println("Success: Direct Debit set for " + recipient + " starting " + dateInput);
+        Logger.log("DIRECT DEBIT SETUP: Account " + accountId + " | Date: " + dbDate);
+    }
+
+    public static void setupStandingOrder(int accountId, String recipient, double amount, String freq, String dateInput) {
+        String dbDate = formatDateForDB(dateInput); // Convert date
+        String sql = "INSERT INTO standing_orders (account_id, recipient_name, amount, frequency, next_payment_date) VALUES (" +
+                accountId + ", '" + recipient + "', " + amount + ", '" + freq + "', '" + dbDate + "')";
+        Main.runDb(sql);
+        IO.println("Success: Standing Order set for " + recipient + " starting " + dateInput);
+        Logger.log("STANDING ORDER SETUP: Account " + accountId + " | Date: " + dbDate);
+    }
+
+    public static void processScheduledPayments() {
+        IO.println("\n=== Processing Payments Due Today (" + java.time.LocalDate.now() + ") ===");
+        int processedCount = 0;
+        int failedCount = 0;
+
+        // Standing Order
+
+        // Collect the IDs
+        java.util.List<Integer> soIds = new java.util.ArrayList<>();
+        String findSoSql = "SELECT id FROM standing_orders WHERE next_payment_date <= date('now')";
+
+        try (Connection conn = Main.getConnection();
+             Statement stmt = conn.createStatement();
+             ResultSet rs = stmt.executeQuery(findSoSql)) {
+            while (rs.next()) {
+                soIds.add(rs.getInt("id"));
+            }
+        } catch (SQLException e) {
+            IO.println("Error finding Standing Orders: " + e.getMessage());
+        }
+
+        // Process each ID
+        for (int id : soIds) {
+
+            int accountId = -1;
+            String recipient = "";
+            double amount = 0;
+            String frequency = "";
+            boolean found = false;
+
+            // Fetch the data and close the connection
+            String fetchSql = "SELECT * FROM standing_orders WHERE id = " + id;
+            try (Connection conn = Main.getConnection();
+                 Statement stmt = conn.createStatement();
+                 ResultSet rs = stmt.executeQuery(fetchSql)) {
+
+                if (rs.next()) {
+                    accountId = rs.getInt("account_id");
+                    recipient = rs.getString("recipient_name");
+                    amount = rs.getDouble("amount");
+                    frequency = rs.getString("frequency");
+                    found = true;
+                }
+            } catch (SQLException e) {
+                IO.println("Error reading SO ID " + id + ": " + e.getMessage());
+                continue;
+            }
+
+            // write the new data
+            if (found) {
+                double available = getAvailableFunds(Transaction.getAccountBalance(accountId),
+                        Transaction.getAccountType(accountId),
+                        Transaction.hasOverdraftFacility(accountId));
+
+                if (available >= amount) {
+                    // Updates the balance
+                    double newBalance = Transaction.getAccountBalance(accountId) - amount;
+                    String updateBal = "UPDATE accounts SET balance = " + newBalance + " WHERE account_id = " + accountId;
+                    Main.runDb(updateBal);
+
+                    // Record the Transaction
+                    Transaction.recordTransaction(accountId, "Standing Order", amount, newBalance, "Payment to " + recipient);
+
+                    // Log
+                    IO.println(" > Account ID:" + accountId + " PAID: £" + String.format("%.2f", amount) + " to " + recipient);
+                    Logger.log("EXECUTED SO: Account " + accountId + " -> " + recipient);
+
+                    // Updates Date
+                    String modifier = "+1 month";
+                    if ("Weekly".equalsIgnoreCase(frequency)) modifier = "+7 days";
+                    else if ("Daily".equalsIgnoreCase(frequency)) modifier = "+1 day";
+                    else if ("Yearly".equalsIgnoreCase(frequency)) modifier = "+1 year";
+
+                    String updateDate = "UPDATE standing_orders SET next_payment_date = date(next_payment_date, '" + modifier + "') WHERE id = " + id;
+                    Main.runDb(updateDate);
+
+                    processedCount++;
+                } else {
+                    IO.println(" > Account ID:" + accountId + " FAILED: £" + amount + " to " + recipient + " - Insufficient Funds");
+                    Logger.log("FAILED SO: Account " + accountId + " - Insufficient Funds");
+                    failedCount++;
+                }
+            }
+        }
+
+        // Direct debit
+
+        java.util.List<Integer> ddIds = new java.util.ArrayList<>();
+        String findDdSql = "SELECT id FROM direct_debits WHERE next_payment_date <= date('now')";
+
+        try (Connection conn = Main.getConnection();
+             Statement stmt = conn.createStatement();
+             ResultSet rs = stmt.executeQuery(findDdSql)) {
+            while (rs.next()) {
+                ddIds.add(rs.getInt("id"));
+            }
+        } catch (SQLException e) {
+            IO.println("Error finding Direct Debits: " + e.getMessage());
+        }
+
+        for (int id : ddIds) {
+            int accountId = -1;
+            String recipient = "";
+            double amount = 0;
+            boolean found = false;
+
+            // Fetch the data and close the connection
+            String fetchSql = "SELECT * FROM direct_debits WHERE id = " + id;
+            try (Connection conn = Main.getConnection();
+                 Statement stmt = conn.createStatement();
+                 ResultSet rs = stmt.executeQuery(fetchSql)) {
+
+                if (rs.next()) {
+                    accountId = rs.getInt("account_id");
+                    recipient = rs.getString("recipient_name");
+                    amount = rs.getDouble("amount");
+                    found = true;
+                }
+            } catch (SQLException e) {
+                IO.println("Error reading DD ID " + id + ": " + e.getMessage());
+                continue;
+            }
+
+            // Process the data
+            if (found) {
+                double available = getAvailableFunds(Transaction.getAccountBalance(accountId),
+                        Transaction.getAccountType(accountId),
+                        Transaction.hasOverdraftFacility(accountId));
+
+                if (available >= amount) {
+                    double newBalance = Transaction.getAccountBalance(accountId) - amount;
+                    String updateBal = "UPDATE accounts SET balance = " + newBalance + " WHERE account_id = " + accountId;
+                    Main.runDb(updateBal);
+
+                    Transaction.recordTransaction(accountId, "Direct Debit", amount, newBalance, "Payment to " + recipient);
+
+                    IO.println(" > Account ID:" + accountId + " PAID: £" + String.format("%.2f", amount) + " to " + recipient);
+                    Logger.log("EXECUTED DD: Account " + accountId + " -> " + recipient);
+
+                    String updateDate = "UPDATE direct_debits SET next_payment_date = date(next_payment_date, '+1 month') WHERE id = " + id;
+                    Main.runDb(updateDate);
+
+                    processedCount++;
+                } else {
+                    IO.println(" > Account ID:" + accountId + " FAILED: £" + amount + " to " + recipient + " - Insufficient Funds");
+                    Logger.log("FAILED DD: Account " + accountId + " - Insufficient Funds");
+                    failedCount++;
+                }
+            }
+        }
+
+        IO.println("--------------------------------");
+        IO.println("Processed: " + processedCount + " | Failed (No Funds): " + failedCount);
     }
 
     public static void viewScheduledPayments(int accountId) {
@@ -186,7 +354,8 @@ public class DataHandling {
             boolean found = false;
             while (rs.next()) {
                 found = true;
-                IO.println("- Recipient: " + rs.getString("recipient_name") + " | Amount: £" + rs.getDouble("amount"));
+                IO.println("- Recipient: " + rs.getString("recipient_name") + " | Amount: £" + rs.getDouble("amount")+
+                        " | Due: " + rs.getString("next_payment_date"));
             }
             if (!found) IO.println("No Direct Debits set up.");
 
@@ -203,7 +372,8 @@ public class DataHandling {
             boolean found = false;
             while (rs.next()) {
                 found = true;
-                IO.println("- Recipient: " + rs.getString("recipient_name") + " | Amount: £" + rs.getDouble("amount") + " | Freq: " + rs.getString("frequency"));
+                IO.println("- Recipient: " + rs.getString("recipient_name") + " | Amount: £" + rs.getDouble("amount") + " | Freq: " + rs.getString("frequency") +
+                        " | Next Payment: " + rs.getString("next_payment_date"));
             }
             if (!found) IO.println("No Standing Orders set up.");
 
@@ -255,13 +425,16 @@ public class DataHandling {
 
         Transaction.recordTransaction(accountId, "Interest", interestAmount, newBalance, "Annual ISA Interest Applied");
 
-        IO.println("Annual Interest Rate of " + (interestRate * 100) + "% applied.");
-        Logger.log("Annual Interest Rate of " + interestRate + " % applied.");
-        IO.println("Interest Calculated: £" + String.format("%.2f", interestAmount));
+        IO.println("\n=== ISA Interest Breakdown ===");
 
+        IO.println("Current Balance:   £" + String.format("%.2f", currentBalance));
+        IO.println("Interest Rate:     " + (interestRate * 100) + "% (Annual)");
+        IO.println("Calculation:       £" + String.format("%.2f", currentBalance) + " x " + interestRate);
+        IO.println("---------------------------");
+        IO.println("Interest Added:    £" + String.format("%.2f", interestAmount));
+        IO.println("New Balance:       £" + String.format("%.2f", newBalance));
 
-        IO.println("New Balance: £" + String.format("%.2f", newBalance));
-        Logger.log("New Balance: £" + String.format("%.2f", newBalance));
+        Logger.log("ISA INTEREST APPLIED | Amount: £" + String.format("%.2f", interestAmount) + " | New Balance: £" + String.format("%.2f", newBalance));
     }
 
     // Check if ISA yearly interest

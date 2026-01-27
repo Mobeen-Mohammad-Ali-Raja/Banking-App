@@ -1,12 +1,15 @@
 import model.*;
 import net.sqlitetutorial.DataHandling;
 
+import java.time.LocalDate;
+import java.time.format.DateTimeFormatter;
 import java.util.Scanner;
 
 public class CLIMenu {
     static Scanner reader = new Scanner(System.in);
     static boolean running = true;
     static Customer currentCustomer;
+    static LocalDate today = LocalDate.now();
 
     public static void main() {
         Logger.log("Program started");
@@ -26,7 +29,8 @@ public class CLIMenu {
                 1. Find Customer
                 2. Sign Up Customer
                 3. Switch Customer
-                4. Help
+                4. Run End-of-Day Processing (Trigger Standing Order/Direct Debit checks)
+                5. Help
                 0. Exit
                 """);
         IO.print("Select option: ");
@@ -49,7 +53,11 @@ public class CLIMenu {
                     switchCustomer();
                     break;
                 case 4:
-                    Logger.log("4. Help");
+                    Logger.log("4. Run End-of-Day Processing");
+                DataHandling.processScheduledPayments();
+                break;
+            case 5:
+                Logger.log("5. Help");
                     help("main menu");
                     break;
                 case 0:
@@ -585,7 +593,8 @@ public class CLIMenu {
                         1. Find Customer - Search for an existing customer by Customer ID
                         2. Sign Up Customer - Register a new customer in the system
                         3. Switch Customer - Change to another customer's session
-                        4. Help - Display this help information
+                        4. Run End-of-Day Processing - Manually trigger all scheduled payments (Standing Orders/Direct Debits)
+                        5. Help - Display this help information
                         0. Exit - Close the Acme Teller System
                         """);
                 break;
@@ -734,7 +743,7 @@ public class CLIMenu {
                         4. Set Up Direct Debit: Schedule a payment to a recipient.
                         5. Set Up Standing Order: Schedule regular payments (e.g. Monthly).
                         6. View Scheduled Payments: List all active Direct Debits & Standing Orders.
-                        """);   
+                        """);
                 break;
 
             case "account isa":
@@ -749,7 +758,7 @@ public class CLIMenu {
                         - Overdraft: Not available for ISAs.
                         
                         Operations:
-                        4. Apply Annual Interest: Calculates 2.75% of current balance 
+                        4. Apply Annual Interest: Calculates 2.75% of current balance
                            and adds it to the account (Can only be done once per day).
                         """);
                 break;
@@ -922,11 +931,13 @@ public class CLIMenu {
 
             try {
                 byte choice = 0;
-            try {
-                choice = reader.nextByte();
-                reader.nextLine();
-            } catch (Exception e) {
-                reader.nextLine();
+                try {
+                    choice = reader.nextByte();
+                    reader.nextLine();
+                } catch (Exception e) {
+                    IO.println("Incorrect input, select a valid option");
+                    reader.nextLine();
+                    continue;
             }
 
                 switch (choice) {
@@ -950,7 +961,7 @@ public class CLIMenu {
                         Logger.log("User Selected: Issue Cheque Book");
                             DataHandling.issueChequeBook(accountId);
                         } else if (isPersonal) {
-                        // Direct Debit
+                        // Direct Debit Setup
                         Logger.log("User Selected: Setup Direct Debit");
                         IO.print("Enter Recipient Name: ");
                         String recipient = reader.nextLine();
@@ -958,59 +969,104 @@ public class CLIMenu {
                         try {
                             double amount = reader.nextDouble();
                             reader.nextLine();
-                            DataHandling.setupDirectDebit(accountId, recipient, amount);
-                        } catch(Exception e) { reader.nextLine(); IO.println("Invalid amount."); }
-                    } else {
-                        help("account personal");
-                    }
-                    break;
-
-                case 5:
-                    if (isISA) {
-                        help("account isa");
-                    } else if (isBusiness) {
-                        help("account business");
-                    } else if (isPersonal) {
-                        // NEW: Standing Order
-                        Logger.log("User Selected: Setup Standing Order");
-                        IO.print("Enter Recipient Name: ");
-                        String recipient = reader.nextLine();
-                        IO.print("Enter Amount: £");
-                        try {
-                            double amount = reader.nextDouble();
+                            IO.print("Enter Start Date (dd/mm/yyyy): ");
+                            String dateInput = reader.nextLine();
+                            LocalDate startDate = LocalDate.parse(dateInput, DateTimeFormatter.ofPattern("dd/MM/yyyy"));
+                            if (!startDate.isAfter(today)) {
+                                IO.println("Start date must be after today.");
+                            } else {
+                                DataHandling.setupDirectDebit(accountId, recipient, amount, dateInput);
+                            }
+                        } catch(Exception e) {
                             reader.nextLine();
-                            IO.print("Enter Frequency (e.g. Monthly): ");
-                            String freq = reader.nextLine();
-                            DataHandling.setupStandingOrder(accountId, recipient, amount, freq);
-                        } catch(Exception e) { reader.nextLine(); IO.println("Invalid amount."); }
-                    }else {
-                            IO.println("Invalid option.");
-                    }
-                    break;
-
-                // View personal scheduled payments
-                case 6:
-                    if (isPersonal) {
-                        Logger.log("User Selected: View Scheduled Payments");
-                        DataHandling.viewScheduledPayments(accountId);
-                    } else {
-                        IO.println("Invalid option.");
-                    }
-                    break;
-
-                // Personal account
-                case 7:
-                    if (isPersonal) {
-                        help("account personal");
-                    } else {
-                        IO.println("Invalid option.");
+                            IO.println("Invalid input.");
                         }
-                        break;
+                    }
+                    break;
+
+                    case 5:
+                        if (isPersonal) {
+                            Logger.log("User Selected: Setup Standing Order");
+
+                            // Recipient
+                            IO.print("Enter Recipient Name: ");
+                            String recipient = reader.nextLine();
+
+                            // Amount
+                            double amount = 0;
+                            boolean validAmount = false;
+                            while (!validAmount) {
+                                IO.print("Enter Amount: £");
+                                try {
+                                    amount = reader.nextDouble();
+                                    reader.nextLine(); // ClearS buffer
+                                    if (amount > 0) {
+                                        validAmount = true;
+                                    } else {
+                                        IO.println("Error: Amount must be positive.");
+                                    }
+                                } catch (Exception e) {
+                                    reader.nextLine(); // Clear invalid input
+                                    IO.println("Error: Please enter a valid number.");
+                                }
+                            }
+
+                            // Frequency Validation
+                            String freq = "";
+                            boolean validFreq = false;
+                            while (!validFreq) {
+                                IO.print("Enter Frequency (Daily, Weekly, Monthly, Yearly): ");
+                                String input = reader.nextLine().trim();
+
+                                // Check against the allowed list
+                                if (input.equalsIgnoreCase("Daily") ||
+                                        input.equalsIgnoreCase("Weekly") ||
+                                        input.equalsIgnoreCase("Monthly") ||
+                                        input.equalsIgnoreCase("Yearly")) {
+                                    freq = input;
+                                    validFreq = true;
+                                } else {
+                                    IO.println("Error: Invalid frequency. You must enter Daily, Weekly, Monthly, or Yearly.");
+                                }
+                            }
+
+                            // Date entry
+                            IO.print("Enter Start Date (dd/mm/yyyy): ");
+                            String dateInput = reader.nextLine();
+
+                            // Sends data to Database
+                            DataHandling.setupStandingOrder(accountId, recipient, amount, freq, dateInput);
+                        }
+                        if (isISA) {
+                            help("account isa");
+                        } else if (isBusiness) {
+                            help("account business");
+                        }
+                    break;
+
+                    // View personal scheduled payments
+                    case 6:
+                        if (isPersonal) {
+                            Logger.log("User Selected: View Scheduled Payments");
+                            DataHandling.viewScheduledPayments(accountId);
+                        } else {
+                            IO.println("Invalid option.");
+                        }
+                    break;
+
+                    // Personal accounts
+                    case 7:
+                        if (isPersonal) {
+                            help("account personal");
+                        } else {
+                            IO.println("Invalid option.");
+                        }
+                    break;
                     case 0:
                         Logger.log("User Selected: 0. Back");
                         inAccount = false;
                         listCustomerAccounts();
-                        break;
+                    break;
                     default:
                         Logger.log("Invalid Option Selected in Account Menu");
                         IO.println("Invalid option, Try again!\n");
@@ -1101,18 +1157,20 @@ public class CLIMenu {
         try {
             byte choice = reader.nextByte();
             reader.nextLine();
+            IO.println(choice);
 
             if (choice == 0) {
                 Logger.log("0. Back to Customer Portal");
                 customerPortal();
             } else {
-                Logger.log("Showing transactions details");
-                IO.println("Transaction details shown\n");
+                Logger.log("Incorrect option, returning to customer portal");
+                IO.println("Incorrect option, returning to customer portal\n");
             }
         } catch (Exception e) {
             Logger.log("Error in viewTransactions: " + e.getMessage());
+            IO.println("Invalid input, enter a valid option");
             reader.nextLine();
-            customerPortal();
+            viewTransactions(accountSelection);
         }
     }
 
@@ -1259,6 +1317,7 @@ public class CLIMenu {
                 reader.nextLine();
             } catch (Exception e) {
                 reader.nextLine();
+                IO.println("\nError: Incorrect type, enter a valid option (0-2)");
                 continue;
             }
 
@@ -1297,7 +1356,7 @@ public class CLIMenu {
 
                 validBalance = true;
             } else {
-                IO.println("Invalid option.");
+                IO.println("Invalid option (out of bounds), enter a valid option (0-2)");
             }
         }
 
@@ -1323,6 +1382,7 @@ public class CLIMenu {
         } else {
             Logger.log("User Cancelled Confirmation.");
             IO.println("Account creation cancelled.");
+            customerPortal();
         }
     }
 

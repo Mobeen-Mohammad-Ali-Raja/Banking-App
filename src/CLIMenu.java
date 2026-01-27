@@ -1040,7 +1040,7 @@ public class CLIMenu {
                     }
                     break;
 
-                // Personal account
+                // Personal accounts
                 case 7:
                     if (isPersonal) {
                         help("account personal");

@@ -26,7 +26,8 @@ public class CLIMenu {
                 1. Find Customer
                 2. Sign Up Customer
                 3. Switch Customer
-                4. Help
+                4. Run End-of-Day Processing (Trigger Standing Order/Direct Debit checks)
+                5. Help
                 0. Exit
                 """);
         IO.print("Select option: ");
@@ -49,7 +50,11 @@ public class CLIMenu {
                     switchCustomer();
                     break;
                 case 4:
-                    Logger.log("4. Help");
+                    Logger.log("4. Run End-of-Day Processing");
+                DataHandling.processScheduledPayments();
+                break;
+            case 5:
+                Logger.log("5. Help");
                     help("main menu");
                     break;
                 case 0:
@@ -585,7 +590,8 @@ public class CLIMenu {
                         1. Find Customer - Search for an existing customer by Customer ID
                         2. Sign Up Customer - Register a new customer in the system
                         3. Switch Customer - Change to another customer's session
-                        4. Help - Display this help information
+                        4.Run End-of-Day Processing - Manually trigger all scheduled payments (Standing Orders/Direct Debits)
+                        5. Help - Display this help information
                         0. Exit - Close the Acme Teller System
                         """);
                 break;
@@ -734,7 +740,7 @@ public class CLIMenu {
                         4. Set Up Direct Debit: Schedule a payment to a recipient.
                         5. Set Up Standing Order: Schedule regular payments (e.g. Monthly).
                         6. View Scheduled Payments: List all active Direct Debits & Standing Orders.
-                        """);   
+                        """);
                 break;
 
             case "account isa":
@@ -950,7 +956,7 @@ public class CLIMenu {
                         Logger.log("User Selected: Issue Cheque Book");
                             DataHandling.issueChequeBook(accountId);
                         } else if (isPersonal) {
-                        // Direct Debit
+                        // Direct Debit Setup
                         Logger.log("User Selected: Setup Direct Debit");
                         IO.print("Enter Recipient Name: ");
                         String recipient = reader.nextLine();
@@ -958,20 +964,20 @@ public class CLIMenu {
                         try {
                             double amount = reader.nextDouble();
                             reader.nextLine();
-                            DataHandling.setupDirectDebit(accountId, recipient, amount);
-                        } catch(Exception e) { reader.nextLine(); IO.println("Invalid amount."); }
-                    } else {
-                        help("account personal");
+                            IO.print("Enter Start Date (dd/mm/yyyy): ");
+                            String dateInput = reader.nextLine();
+
+                            DataHandling.setupDirectDebit(accountId, recipient, amount, dateInput);
+                        } catch(Exception e) {
+                            reader.nextLine();
+                            IO.println("Invalid input.");
+                        }
                     }
                     break;
 
                 case 5:
-                    if (isISA) {
-                        help("account isa");
-                    } else if (isBusiness) {
-                        help("account business");
-                    } else if (isPersonal) {
-                        // NEW: Standing Order
+                    if (isPersonal) {
+                        // Standing Order Setup
                         Logger.log("User Selected: Setup Standing Order");
                         IO.print("Enter Recipient Name: ");
                         String recipient = reader.nextLine();
@@ -981,10 +987,15 @@ public class CLIMenu {
                             reader.nextLine();
                             IO.print("Enter Frequency (e.g. Monthly): ");
                             String freq = reader.nextLine();
-                            DataHandling.setupStandingOrder(accountId, recipient, amount, freq);
-                        } catch(Exception e) { reader.nextLine(); IO.println("Invalid amount."); }
-                    }else {
-                            IO.println("Invalid option.");
+                            // NEW: Ask for Date
+                            IO.print("Enter Start Date (dd/mm/yyyy): ");
+                            String dateInput = reader.nextLine();
+
+                            DataHandling.setupStandingOrder(accountId, recipient, amount, freq, dateInput);
+                        } catch(Exception e) {
+                            reader.nextLine();
+                            IO.println("Invalid input.");
+                        }
                     }
                     break;
 

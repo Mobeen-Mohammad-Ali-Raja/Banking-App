@@ -354,7 +354,8 @@ public class DataHandling {
             boolean found = false;
             while (rs.next()) {
                 found = true;
-                IO.println("- Recipient: " + rs.getString("recipient_name") + " | Amount: £" + rs.getDouble("amount"));
+                IO.println("- Recipient: " + rs.getString("recipient_name") + " | Amount: £" + rs.getDouble("amount")+
+                        " | Due: " + rs.getString("next_payment_date"));
             }
             if (!found) IO.println("No Direct Debits set up.");
 

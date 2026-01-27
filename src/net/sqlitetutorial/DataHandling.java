@@ -216,7 +216,7 @@ public class DataHandling {
                     withdraw(accountId, amount);
 
                     Logger.log("EXECUTED STANDING ORDER: Account " + accountId + " -> " + recipient + " (£" + amount + ")");
-                    IO.println(" > PAID: £" + amount + " to " + recipient);
+                    IO.println(" > " + accountId + " PAID: £" + amount + " to " + recipient);
 
                     // Update Next Payment Date ( 1 Month)
                     String updateSql = "UPDATE standing_orders SET next_payment_date = date(next_payment_date, '+1 month') WHERE id = " + id;
@@ -224,8 +224,8 @@ public class DataHandling {
 
                     processedCount++;
                 } else {
-                    // SAFE FAILURE LOGGING
-                    IO.println(" > FAILED: £" + amount + " to " + recipient + " - Insufficient Funds");
+                    // Failed payment
+                    IO.println(" > " + accountId + " FAILED: £" + amount + " to " + recipient + " - Insufficient Funds");
                     Logger.log("FAILED PAYMENT: Account " + accountId + " | Reason: Insufficient Funds | Amount: " + amount);
                     failedCount++;
                 }
@@ -252,7 +252,7 @@ public class DataHandling {
                 if (availableFunds >= amount) {
                     withdraw(accountId, amount);
                     Logger.log("EXECUTED DIRECT DEBIT: Account " + accountId + " -> " + recipient + " (£" + amount + ")");
-                    IO.println(" > PAID: £" + amount + " to " + recipient);
+                    IO.println(" > " + accountId + " PAID: £" + amount + " to " + recipient);
 
                     // Update date to next month
                     String updateSql = "UPDATE direct_debits SET next_payment_date = date(next_payment_date, '+1 month') WHERE id = " + id;
@@ -260,7 +260,7 @@ public class DataHandling {
 
                     processedCount++;
                 } else {
-                    IO.println(" > FAILED: £" + amount + " to " + recipient + " - Insufficient Funds");
+                    IO.println(" > " + accountId + " FAILED: £" + amount + " to " + recipient + " - Insufficient Funds");
                     Logger.log("FAILED PAYMENT: Account " + accountId + " | Reason: Insufficient Funds | Amount: " + amount);
                     failedCount++;
                 }

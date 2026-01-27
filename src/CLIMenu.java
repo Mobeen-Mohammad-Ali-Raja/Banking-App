@@ -975,29 +975,60 @@ public class CLIMenu {
                     }
                     break;
 
-                case 5:
-                    if (isPersonal) {
-                        // Standing Order Setup
-                        Logger.log("User Selected: Setup Standing Order");
-                        IO.print("Enter Recipient Name: ");
-                        String recipient = reader.nextLine();
-                        IO.print("Enter Amount: £");
-                        try {
-                            double amount = reader.nextDouble();
-                            reader.nextLine();
-                            IO.print("Enter Frequency (e.g. Monthly): ");
-                            String freq = reader.nextLine();
-                            // NEW: Ask for Date
+                    case 5:
+                        if (isPersonal) {
+                            Logger.log("User Selected: Setup Standing Order");
+
+                            // Recipient
+                            IO.print("Enter Recipient Name: ");
+                            String recipient = reader.nextLine();
+
+                            // Amount
+                            double amount = 0;
+                            boolean validAmount = false;
+                            while (!validAmount) {
+                                IO.print("Enter Amount: £");
+                                try {
+                                    amount = reader.nextDouble();
+                                    reader.nextLine(); // ClearS buffer
+                                    if (amount > 0) {
+                                        validAmount = true;
+                                    } else {
+                                        IO.println("Error: Amount must be positive.");
+                                    }
+                                } catch (Exception e) {
+                                    reader.nextLine(); // Clear invalid input
+                                    IO.println("Error: Please enter a valid number.");
+                                }
+                            }
+
+                            // Frequency Validation
+                            String freq = "";
+                            boolean validFreq = false;
+                            while (!validFreq) {
+                                IO.print("Enter Frequency (Daily, Weekly, Monthly, Yearly): ");
+                                String input = reader.nextLine().trim();
+
+                                // Check against the allowed list
+                                if (input.equalsIgnoreCase("Daily") ||
+                                        input.equalsIgnoreCase("Weekly") ||
+                                        input.equalsIgnoreCase("Monthly") ||
+                                        input.equalsIgnoreCase("Yearly")) {
+                                    freq = input;
+                                    validFreq = true;
+                                } else {
+                                    IO.println("Error: Invalid frequency. You must enter Daily, Weekly, Monthly, or Yearly.");
+                                }
+                            }
+
+                            // Date entry
                             IO.print("Enter Start Date (dd/mm/yyyy): ");
                             String dateInput = reader.nextLine();
 
+                            // Sends data to Database
                             DataHandling.setupStandingOrder(accountId, recipient, amount, freq, dateInput);
-                        } catch(Exception e) {
-                            reader.nextLine();
-                            IO.println("Invalid input.");
                         }
-                    }
-                    break;
+                        break;
 
                 // View personal scheduled payments
                 case 6:

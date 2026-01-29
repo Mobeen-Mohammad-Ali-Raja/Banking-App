@@ -954,45 +954,18 @@ public class CLIMenu {
                         viewTransactions(accountId);
                         break;
                     case 4:
-                        if (isISA) {
-                        Logger.log("User Selected: Apply ISA Interest");
-                            DataHandling.applyISAInterest(accountId);
-                        } else if (isBusiness) {
-                        Logger.log("User Selected: Issue Cheque Book");
-                            DataHandling.issueChequeBook(accountId);
-                        } else if (isPersonal) {
-                        // Direct Debit Setup
-                        Logger.log("User Selected: Setup Direct Debit");
-                        IO.print("Enter Recipient Name: ");
-                        String recipient = reader.nextLine();
-                        IO.print("Enter Amount: £");
-                        try {
-                            double amount = reader.nextDouble();
-                            reader.nextLine();
-                            IO.print("Enter Start Date (dd/mm/yyyy): ");
-                            String dateInput = reader.nextLine();
-                            LocalDate startDate = LocalDate.parse(dateInput, DateTimeFormatter.ofPattern("dd/MM/yyyy"));
-                            if (!startDate.isAfter(today)) {
-                                IO.println("Start date must be after today.");
-                            } else {
-                                DataHandling.setupDirectDebit(accountId, recipient, amount, dateInput);
-                            }
-                        } catch(Exception e) {
-                            reader.nextLine();
-                            IO.println("Invalid input.");
-                        }
-                    }
-                    break;
-
-                    case 5:
                         if (isPersonal) {
-                            Logger.log("User Selected: Setup Standing Order");
-                            IO.println("\n--- Set Up Standing Order ---");
+                            Logger.log("User Selected: Setup Direct Debit");
+                            IO.println("\n--- Set Up Direct Debit ---");
                             IO.println("(Enter '0' at any step to cancel)");
 
                             // Recipient
                             IO.print("Enter Recipient Name: ");
-                            String recipient = reader.nextLine();
+                            String recipient = reader.nextLine().trim();
+                            if (recipient.equals("0")) {
+                                IO.println("Operation cancelled.");
+                                continue; // Jumps back to Account Menu
+                            }
 
                             // Amount
                             double amount = 0;
@@ -1010,28 +983,91 @@ public class CLIMenu {
                                 }
 
                                 try {
-                                    amount = reader.nextDouble();
-                                    reader.nextLine(); // ClearS buffer
+                                    amount = Double.parseDouble(amountInput);
                                     if (amount > 0) {
                                         validAmount = true;
                                     } else {
                                         IO.println("Error: Amount must be positive.");
                                     }
-                                } catch (Exception e) {
-                                    reader.nextLine(); // Clear invalid input
+                                } catch (NumberFormatException e) {
+                                    IO.println("Error: Please enter a valid number (e.g., 10.50).");
+                                }
+                            }
+                            if (cancelled) continue; // Exit case
+
+                            // Date
+                            IO.print("Enter Start Date (dd/mm/yyyy): ");
+                            String dateInput = reader.nextLine().trim();
+                            if (dateInput.equals("0")) {
+                                IO.println("Operation cancelled.");
+                                continue;
+                            }
+
+                            // Validate Date and then saves
+                            try {
+                                LocalDate startDate = LocalDate.parse(dateInput, DateTimeFormatter.ofPattern("dd/MM/yyyy"));
+                                DataHandling.setupDirectDebit(accountId, recipient, amount, dateInput);
+                            } catch (Exception e) {
+                                IO.println("Error: Invalid date format. Please use dd/mm/yyyy.");
+                            }
+                        }
+                        break;
+
+                    case 5:
+                        if (isPersonal) {
+                            Logger.log("User Selected: Setup Standing Order");
+                            IO.println("\n--- Set Up Standing Order ---");
+                            IO.println("(Enter '0' at any step to cancel)");
+
+                            // Recipient
+                            IO.print("Enter Recipient Name: ");
+                            String recipient = reader.nextLine().trim();
+                            if (recipient.equals("0")) {
+                                IO.println("Operation cancelled.");
+                                continue;
+                            }
+
+                            // Amount
+                            double amount = 0;
+                            boolean validAmount = false;
+                            boolean cancelled = false;
+
+                            while (!validAmount) {
+                                IO.print("Enter Amount: £");
+                                String amountInput = reader.nextLine().trim();
+
+                                if (amountInput.equals("0")) {
+                                    IO.println("Operation cancelled.");
+                                    cancelled = true;
+                                    break;
+                                }
+
+                                try {
+                                    amount = Double.parseDouble(amountInput);
+                                    if (amount > 0) {
+                                        validAmount = true;
+                                    } else {
+                                        IO.println("Error: Amount must be positive.");
+                                    }
+                                } catch (NumberFormatException e) {
                                     IO.println("Error: Please enter a valid number.");
                                 }
                             }
                             if (cancelled) continue;
 
-                            // Frequency Validation
+                            // Frequency
                             String freq = "";
                             boolean validFreq = false;
                             while (!validFreq) {
                                 IO.print("Enter Frequency (Daily, Weekly, Monthly, Yearly): ");
                                 String input = reader.nextLine().trim();
 
-                                // Check against the allowed list
+                                if (input.equals("0")) {
+                                    IO.println("Operation cancelled.");
+                                    cancelled = true;
+                                    break;
+                                }
+
                                 if (input.equalsIgnoreCase("Daily") ||
                                         input.equalsIgnoreCase("Weekly") ||
                                         input.equalsIgnoreCase("Monthly") ||
@@ -1039,24 +1075,23 @@ public class CLIMenu {
                                     freq = input;
                                     validFreq = true;
                                 } else {
-                                    IO.println("Error: Invalid frequency. You must enter Daily, Weekly, Monthly, or Yearly.");
+                                    IO.println("Error: Invalid frequency.");
                                 }
                             }
                             if (cancelled) continue;
 
-                            // Date entry
+                            // Date
                             IO.print("Enter Start Date (dd/mm/yyyy): ");
-                            String dateInput = reader.nextLine();
+                            String dateInput = reader.nextLine().trim();
+                            if (dateInput.equals("0")) {
+                                IO.println("Operation cancelled.");
+                                continue;
+                            }
 
-                            // Sends data to Database
+                            // Save
                             DataHandling.setupStandingOrder(accountId, recipient, amount, freq, dateInput);
                         }
-                        if (isISA) {
-                            help("account isa");
-                        } else if (isBusiness) {
-                            help("account business");
-                        }
-                    break;
+                        break;
 
                     // View personal scheduled payments
                     case 6:

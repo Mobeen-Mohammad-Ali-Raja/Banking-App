@@ -1285,7 +1285,7 @@ public class CLIMenu {
     private static void createAccount(String accountType) {
         IO.println("\n=== Create " + accountType.toUpperCase() + " Account ===");
 
-        // 1. ISA Check
+        // ISA Check
         if (accountType.equalsIgnoreCase("ISA")) {
             if (DataHandling.customerHasISA(currentCustomer.getCustomerId())) {
                 Logger.log("Blocked: Customer " + currentCustomer.getCustomerId() + " attempted second ISA.");
@@ -1297,7 +1297,7 @@ public class CLIMenu {
             }
         }
 
-        // 2. Business Check
+        // Business Check
         if (accountType.equalsIgnoreCase("Business")) {
             if (DataHandling.customerHasBusiness(currentCustomer.getCustomerId())) {
                 Logger.log("Blocked: Customer " + currentCustomer.getCustomerId() + " attempted second Business Account.");
@@ -1309,7 +1309,7 @@ public class CLIMenu {
             }
         }
 
-        // 3. Business Type Selection
+        // Business Type Selection
         if (accountType.equalsIgnoreCase("Business")) {
             boolean validBusinessType = false;
             while (!validBusinessType) {
@@ -1349,7 +1349,7 @@ public class CLIMenu {
             }
         }
 
-        // 4. Balance Selection with Logging
+        // Balance selection with Logging
         double balance = 0;
         boolean validBalance = false;
 
@@ -1409,7 +1409,7 @@ public class CLIMenu {
             }
         }
 
-        // 5. Confirmation
+        // Confirmation
         IO.println("\nCreating " + accountType + " account with opening balance: £" + balance);
         IO.println("1. Confirm");
         IO.println("0. Cancel");

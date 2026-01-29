@@ -1006,7 +1006,12 @@ public class CLIMenu {
                             // Validate Date and then saves
                             try {
                                 LocalDate startDate = LocalDate.parse(dateInput, DateTimeFormatter.ofPattern("dd/MM/yyyy"));
-                                DataHandling.setupDirectDebit(accountId, recipient, amount, dateInput);
+                                if (!startDate.isAfter(today)) {
+                                    IO.println("Start date must be after today.");
+                                } else {
+                                    DataHandling.setupDirectDebit(accountId, recipient, amount, dateInput);
+                                }
+
                             } catch (Exception e) {
                                 IO.println("Error: Invalid date format. Please use dd/mm/yyyy.");
                             }
@@ -1089,7 +1094,13 @@ public class CLIMenu {
                             }
 
                             // Save
-                            DataHandling.setupStandingOrder(accountId, recipient, amount, freq, dateInput);
+                            LocalDate startDate = LocalDate.parse(dateInput, DateTimeFormatter.ofPattern("dd/MM/yyyy"));
+
+                            if (!startDate.isAfter(today)) {
+                                IO.println("Start date must be after today.");
+                            } else {
+                                DataHandling.setupStandingOrder(accountId, recipient, amount, freq, dateInput);
+                            }
                         }
                         break;
 

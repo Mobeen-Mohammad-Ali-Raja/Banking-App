@@ -73,4 +73,9 @@ All system events are logged to `logs.txt` with timestamps, including:
 * System errors and warnings
 
 ## Future Enhancements
-
+* Building a GUI from the CLI menu
+* Change from SQLite to JSON
+* Add delete customer feature
+* International transfers
+* Finding the customer by name and postcode
+* Moving money between accounts

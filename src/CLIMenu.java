@@ -987,6 +987,8 @@ public class CLIMenu {
                     case 5:
                         if (isPersonal) {
                             Logger.log("User Selected: Setup Standing Order");
+                            IO.println("\n--- Set Up Standing Order ---");
+                            IO.println("(Enter '0' at any step to cancel)");
 
                             // Recipient
                             IO.print("Enter Recipient Name: ");
@@ -995,8 +997,18 @@ public class CLIMenu {
                             // Amount
                             double amount = 0;
                             boolean validAmount = false;
+                            boolean cancelled = false;
+
                             while (!validAmount) {
                                 IO.print("Enter Amount: £");
+                                String amountInput = reader.nextLine().trim();
+
+                                if (amountInput.equals("0")) {
+                                    IO.println("Operation cancelled.");
+                                    cancelled = true;
+                                    break;
+                                }
+
                                 try {
                                     amount = reader.nextDouble();
                                     reader.nextLine(); // ClearS buffer
@@ -1010,6 +1022,7 @@ public class CLIMenu {
                                     IO.println("Error: Please enter a valid number.");
                                 }
                             }
+                            if (cancelled) continue;
 
                             // Frequency Validation
                             String freq = "";
@@ -1029,6 +1042,7 @@ public class CLIMenu {
                                     IO.println("Error: Invalid frequency. You must enter Daily, Weekly, Monthly, or Yearly.");
                                 }
                             }
+                            if (cancelled) continue;
 
                             // Date entry
                             IO.print("Enter Start Date (dd/mm/yyyy): ");

@@ -767,7 +767,7 @@ public class CLIMenu {
                 Logger.log("Business Account Help Screen");
                 IO.println("""
                         --- Business Account Help ---
-                        Account for registered Sole Traders, Ltd Companies, and Partnerships.
+                        Account for registered Sole Traders, and Ltd Companies.
                         
                         Rules & Fees:
                         - Annual Fee: £120.00 (Deducted automatically).

@@ -767,7 +767,7 @@ public class CLIMenu {
                 Logger.log("Business Account Help Screen");
                 IO.println("""
                         --- Business Account Help ---
-                        Account for registered Sole Traders, Ltd Companies, and Partnerships.
+                        Account for registered Sole Traders, and Ltd Companies.
                         
                         Rules & Fees:
                         - Annual Fee: £120.00 (Deducted automatically).
@@ -954,7 +954,17 @@ public class CLIMenu {
                         viewTransactions(accountId);
                         break;
                     case 4:
-                        if (isPersonal) {
+                        if (isISA) {
+                            // ISA interest called
+                            Logger.log("User Selected: Apply ISA Interest");
+                            DataHandling.applyISAInterest(accountId);
+
+                        } else if (isBusiness) {
+                            // Calls the issueChequeBook
+                            Logger.log("User Selected: Issue Cheque Book");
+                            DataHandling.issueChequeBook(accountId);
+
+                        } else if (isPersonal) {
                             Logger.log("User Selected: Setup Direct Debit");
                             IO.println("\n--- Set Up Direct Debit ---");
                             IO.println("(Enter '0' at any step to cancel)");
@@ -964,7 +974,7 @@ public class CLIMenu {
                             String recipient = reader.nextLine().trim();
                             if (recipient.equals("0")) {
                                 IO.println("Operation cancelled.");
-                                continue; // Jumps back to Account Menu
+                                continue;
                             }
 
                             // Amount
@@ -1011,7 +1021,6 @@ public class CLIMenu {
                                 } else {
                                     DataHandling.setupDirectDebit(accountId, recipient, amount, dateInput);
                                 }
-
                             } catch (Exception e) {
                                 IO.println("Error: Invalid date format. Please use dd/mm/yyyy.");
                             }
@@ -1029,7 +1038,7 @@ public class CLIMenu {
                             String recipient = reader.nextLine().trim();
                             if (recipient.equals("0")) {
                                 IO.println("Operation cancelled.");
-                                continue;
+                                continue; // Jumps back to Account Menu
                             }
 
                             // Amount
@@ -1058,7 +1067,7 @@ public class CLIMenu {
                                     IO.println("Error: Please enter a valid number.");
                                 }
                             }
-                            if (cancelled) continue;
+                            if (cancelled) continue; // Exit case
 
                             // Frequency
                             String freq = "";
@@ -1094,13 +1103,26 @@ public class CLIMenu {
                             }
 
                             // Save
-                            LocalDate startDate = LocalDate.parse(dateInput, DateTimeFormatter.ofPattern("dd/MM/yyyy"));
-
-                            if (!startDate.isAfter(today)) {
-                                IO.println("Start date must be after today.");
-                            } else {
-                                DataHandling.setupStandingOrder(accountId, recipient, amount, freq, dateInput);
+                            try {
+                                LocalDate startDate = LocalDate.parse(dateInput, DateTimeFormatter.ofPattern("dd/MM/yyyy"));
+                                if (!startDate.isAfter(today)) {
+                                    IO.println("Start date must be after today.");
+                                } else {
+                                    DataHandling.setupStandingOrder(accountId, recipient, amount, freq, dateInput);
+                                }
+                            } catch (Exception e) {
+                                IO.println("Error: Invalid date format.");
                             }
+
+                        } else {
+                            // Help Logic for ISA/Business (
+                            // For ISA/Business, Option 5 is "Help"
+                            if (isISA) {
+                                help("account isa");
+                            } else {
+                                help("account business");
+                            }
+
                         }
                         break;
 
